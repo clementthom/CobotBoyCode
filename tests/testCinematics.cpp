@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "../main/cinematics.h"
-#include "../main/cinematics.c"
+#include "../main/cinematics.cpp"
 
 
 /////Prototypes

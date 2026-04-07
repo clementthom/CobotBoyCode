@@ -77,34 +77,35 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     radial pivot. Point 3 is the Wrist end and 4 is the prehension system centre point*/
 
     
-    int radiusZServoToPrehensionCenter = sqrt(pow(coordinates->x,2.0)+pow(coordinates->y,2.0)); //radius between 0 and 4, pow 2 --> square
+    float radiusZServoToPrehensionCenter = sqrt(coordinates->x*coordinates->x+coordinates->y*coordinates->y); //radius between 0 and 4
 
     ///coordinates wrist end position (wrist-prehension system mechanical connection, 3)
-    int radiusZServoToWristEnd = radiusZServoToPrehensionCenter-toolLength; //radius between 0 and 3
-    int zWristEnd = coordinates->z-toolHeight; //height between 0 and 3
+    float radiusZServoToWristEnd = radiusZServoToPrehensionCenter-toolLength; //radius between 0 and 3
+    float zWristEnd = coordinates->z-toolHeight; //height between 0 and 3
     //no angle, point 3 keeps its distance to 4 constant
 
 
-    int radiusZservoToPivot1 = sqrt(pow(xOffsetPivot1,2.0)+pow(zOffsetPivot1,2.0)); //radius between 0 and 1
-    int zPivot1 = zOffsetPivot1; //pivot joint 1 height
+    float radiusZservoToPivot1 = sqrt(xOffsetPivot1*xOffsetPivot1+zOffsetPivot1*zOffsetPivot1); //radius between 0 and 1
+    float zPivot1 = zOffsetPivot1; //pivot joint 1 height
 
 
-    int distancePivot1WristEnd = sqrt(pow(coordinates->x - xOffsetPivot1- toolLength, 2.0)
-        + pow(coordinates->z-zOffsetPivot1-toolHeight, 2.0));
+    float distancePivot1WristEnd = sqrt((coordinates->x - xOffsetPivot1- toolLength)*(coordinates->x - xOffsetPivot1- toolLength)
+        + (coordinates->z-zOffsetPivot1-toolHeight)*(coordinates->z-zOffsetPivot1-toolHeight));
     //use of Al-Kashi's theorem to get Pivot 2 height and radius --> a²=b²+c²-2bccos(alpha), a opposed to alpha
-    float angleLine13ToLine12 = acos((pow(distancePivot1WristEnd,2.0)+pow(lenghtArm1,2.0)-pow(lengthArm2, 2.0))
+    float angleLine13ToLine12 = acos(((distancePivot1WristEnd*distancePivot1WristEnd)
+                                    +(lenghtArm1*lenghtArm1)- (lengthArm2*lengthArm2))
         / (2*lenghtArm1*lengthArm2));
     float angleHorizontalToLine13 = atan2(coordinates->x-xOffsetPivot1- toolLength, coordinates->z-zOffsetPivot1- toolHeight);
     float angleHorizontalToLine12 = angleHorizontalToLine13+angleLine13ToLine12;
     
-    int zPivot2 = sin(angleHorizontalToLine12)*lenghtArm1 + zPivot1;
-    int radiusZservoToPivot2 = sqrt(pow(cos(angleHorizontalToLine12)*lenghtArm1 + xOffsetPivot1, 2.0)
-                                +pow(sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1, 2.0)) ;
+    float zPivot2 = sin(angleHorizontalToLine12)*lenghtArm1 + zPivot1;
+    float radiusZservoToPivot2 = sqrt(((cos(angleHorizontalToLine12))*lenghtArm1 + xOffsetPivot1)*(cos(angleHorizontalToLine12)*lenghtArm1 + xOffsetPivot1)
+                                +((sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1)*(sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1))) ;
 
     
     //angles in rad 
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 
-    float angleArm2ToHorizontalCorrected = -asin((float)(zPivot2-zWristEnd)/(float)lengthArm2); 
+    float angleArm2ToHorizontalCorrected = -asin((zPivot2-zWristEnd)/(float)lengthArm2); 
     //angle between the 1-2 arm and the ground - theta2
     float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
     //horizontal angle between 0 and 4 - theta3
@@ -117,12 +118,12 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
 
     //check angles validity
     if(servoSet->servoLeft.angleCommand > 10 && servoSet->servoLeft.angleCommand < 160 && servoSet->servoRight.angleCommand > 0
-    || servoSet->servoRight.angleCommand  < 180  & servoSet->servoZ.angleCommand > 0  && servoSet->servoZ.angleCommand < 180) {
+    && servoSet->servoRight.angleCommand  < 180  && servoSet->servoZ.angleCommand > 0  && servoSet->servoZ.angleCommand < 180) {
         servoSet->reachable=1;
     }
     else {
         servoSet->reachable=0;
-        printf("Selected destination non reachable");
+        //printf("Selected destination non reachable");
     }
 }
 

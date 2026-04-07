@@ -1,7 +1,6 @@
 #include <Servo.h>
 #include "common.h" //lists structs and other elements shared by different modules
 #include "cinematics.h" //cinematic-related functions and structs (position + servo controls)
-#include "cinematics.c"
 #include "debug.h" //debug functions, mainly console tests returns
 #include "trajectories.h" //code related to registered trajectories and speed profiles
 #include "userInterface.h" //manages the control panel components and screens
@@ -53,6 +52,7 @@ void setup() {
 
   Serial.println("Demarrage...");
 
+  Coordinates currentPosition;
   //initialisation position initiale de l'outil (pointe préhenseur, point théorique)
   currentPosition.x=100.0;
   currentPosition.y=100.0;
@@ -73,6 +73,10 @@ void setup() {
   servoSet.servoLeft.currentAngle = servoSet.servoLeft.angleCommand;
   servoSet.servoRight.currentAngle = servoSet.servoRight.angleCommand;
   servoSet.servoZ.currentAngle = servoSet.servoZ.angleCommand;
+
+  destination.x=150.0;
+  destination.y=180.0;
+  destination.z=0.5;
   
   delay(5000);
   /*
@@ -94,18 +98,16 @@ void loop() {
   Serial.print("angle 3 : ");
   Serial.println(servoSet.servoZ.currentAngle);
 
-  destination.x=160.0;
-  destination.y=-150.0;
-  destination.z=50.0;
 
   coordinatesToAngles(&destination, &servoSet) ;
-/*
+
   Serial.print("consigne angle 1 : ");
   Serial.println(servoSet.servoLeft.angleCommand);
   Serial.print("consigne angle 2 : ");
   Serial.println(servoSet.servoRight.angleCommand);
   Serial.print("consigne angle 3 : ");
   Serial.println(servoSet.servoZ.angleCommand);
+  Serial.println(servoSet.reachable);
 
   fullyApplyCommandToServos(&servoSet, 200);
 
@@ -117,7 +119,6 @@ void loop() {
   Serial.println(servoSet.servoZ.angleCommand);
 
   delay(50);
-  */
 }
 
 

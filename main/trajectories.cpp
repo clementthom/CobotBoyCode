@@ -35,7 +35,7 @@ void initCoordinates() {
     machineA.z=50.0;
 
     machineB.x=150.0;
-    machineB.y=-180;
+    machineB.y=-180.0;
     machineB.z=0.5;
 
     initPosition.x=0;
