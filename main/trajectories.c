@@ -139,44 +139,40 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
     }
 
 
+    //modification (if necessary) of the difference coordinates to accentuate their effects on the angle variations commands
     float* smallestDistance = NULL;
-        if (zoneDistance.distances.x<zoneDistance.distances.y) {
-            if(zoneDistance.distances.x<zoneDistance.distances.z) {
-                smallestDistance = &zoneDistance.distances.x;
-            }
-            else {
-                smallestDistance = &zoneDistance.distances.z;
-            }
+    if (zoneDistance.distances.x<zoneDistance.distances.y) {
+        if(zoneDistance.distances.x<zoneDistance.distances.z) {
+            smallestDistance = &zoneDistance.distances.x;
         }
         else {
-            smallestDistance = &zoneDistance.distances.y;
+            smallestDistance = &zoneDistance.distances.z;
         }
-        printf("smallestDistance : %f", *smallestDistance);
-
-        if(*smallestDistance<2.0) { //if smallest distance from one of the axis is smaller than 2 mm
-            zoneDistance.distances.x = 1000.0; //big values so the angles of the servo don't answer to these parameters
-            zoneDistance.distances.y = 1000.0;
-            zoneDistance.distances.z = 1000.0;
-
-            *smallestDistance = 1.0; //100/1.0 = 100% of servo power
-        }
-        if(*smallestDistance>80.0) {
-            zoneDistance.distances.x = 0.0;//no need for trajectory correction
-            zoneDistance.distances.y = 0.0;
-            zoneDistance.distances.z = 0.0;
-        }
-
-    //closestDistanceFromObstacleBounds
-    if(zone.zoneType==OBSTACLE) {
-        
-        zoneDistance.zoneType=OBSTACLE;
     }
-
-    //closestDistanceFromWorkingZoneBounds
-    if(zone.zoneType==WORKING_ZONE) {
-
+    else {
+        smallestDistance = &zoneDistance.distances.y;
     }
+    printf("smallestDistance : %f", *smallestDistance);
 
+    if(*smallestDistance<2.0) { //if smallest distance from one of the axis is smaller than 2 mm
+        zoneDistance.distances.x = 1000.0; //big values so the angles of the servo don't answer to these parameters
+        zoneDistance.distances.y = 1000.0;
+        zoneDistance.distances.z = 1000.0;
+
+        *smallestDistance = 1.0; //100/1.0 = 100% of servo power
+    }
+    if(*smallestDistance>80.0) {
+        zoneDistance.distances.x = 0.0;//no need for trajectory correction
+        zoneDistance.distances.y = 0.0;
+        zoneDistance.distances.z = 0.0;
+    }
+    //else : the distance coordinates stay the same : no ponderation
+    zoneDistance.zoneType = zone.zoneType;
 
     return zoneDistance;
+}
+
+
+void changeServosSteps() {
+    
 }

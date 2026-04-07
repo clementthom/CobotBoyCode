@@ -26,8 +26,8 @@ const int degOffsetZ = -3;
 
 // Le point piloté est la pointe de l'outil.
 // Le poignet est donc décalé par rapport à cette pointe.
-const int toolLength = 50;   // mm, horizontal, toujours parallèle au sol
-const int toolHeight = -10;  // mm, outil 10 mm plus bas que le poignet
+const int toolLength = 57;   // mm, horizontal, toujours parallèle au sol
+const int toolHeight = -15;  // mm, outil 10 mm plus bas que le poignet
 //on travaille en cylindrique --> pas d'angle ici
 
 // ======================================================
@@ -102,28 +102,28 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
                                 +pow(sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1, 2.0)) ;
 
     
-    //angles in rad -- servos offsets taken into account
+    //angles in rad 
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 
-    float angleArm2ToHorizontalCorrected = sin((float)(zPivot2-zWristEnd)/(float)lengthArm2) + servoSet->servoLeft.angleOffset*(M_PI/180.0); 
+    float angleArm2ToHorizontalCorrected = -asin((float)(zPivot2-zWristEnd)/(float)lengthArm2); 
     //angle between the 1-2 arm and the ground - theta2
-    float angleHorizontalToArm1Corrected = angleHorizontalToLine12 + servoSet->servoRight.angleOffset*(M_PI/180.0); 
+    float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
     //horizontal angle between 0 and 4 - theta3
-    float angleZServoPrehensionCenterCorrected = atan(coordinates->x/coordinates->y) + servoSet->servoZ.angleOffset*(M_PI/180.0); 
+    float angleZServoPrehensionCenterCorrected = atan(coordinates->x/coordinates->y); 
+
+    
+    servoSet->servoLeft.angleCommand = angleArm2ToHorizontalCorrected*(180.0/M_PI)+180.0 + degOffsetLeft;
+    servoSet->servoRight.angleCommand = 180.0 - (angleHorizontalToArm1Corrected+angleArm2ToHorizontalCorrected)*(180.0/M_PI) + degOffsetRight;
+    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI) + degOffsetZ;
 
     //check angles validity
-    if(angleArm2ToHorizontalCorrected > 0 && angleHorizontalToArm1Corrected > 0 && angleZServoPrehensionCenterCorrected > 0
-    || angleArm2ToHorizontalCorrected < M_PI & angleHorizontalToArm1Corrected < M_PI && angleZServoPrehensionCenterCorrected < M_PI) {
+    if(servoSet->servoLeft.angleCommand > 10 && servoSet->servoLeft.angleCommand < 160 && servoSet->servoRight.angleCommand > 0
+    || servoSet->servoRight.angleCommand  < 180  & servoSet->servoZ.angleCommand > 0  && servoSet->servoZ.angleCommand < 180) {
         servoSet->reachable=1;
     }
     else {
         servoSet->reachable=0;
         printf("Selected destination non reachable");
     }
-
-    
-    servoSet->servoLeft.angleCommand = angleArm2ToHorizontalCorrected*(180.0/M_PI);
-    servoSet->servoRight.angleCommand = angleHorizontalToArm1Corrected*(180.0/M_PI);
-    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI);
 }
 
 /**
@@ -137,11 +137,12 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
  * returns : no returns (void).
  */
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
+  /*  
   if (!servoSet->reachable) return;
 
   int done = 0; //target not reached yet
 
-  while (!done) {
+  while (!done) { */
     printf("servoLeft \n = ");
     servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
@@ -153,7 +154,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
         servoSet->servoZ.maxStep);
 
     //writeServosMicroseconds(currentCmdA, currentCmdB, currentCmdZ);
-
+    /*
     //done if angle difference between command and current position is smaller than 0.05 degrees
     if(abs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
       abs(servoSet->servoRight.currentAngle - servoSet->servoRight.angleCommand) < 0.05 &&
@@ -161,9 +162,10 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
 
         done ++;
     }
+    */
 
-    delay(delayStepCloserToCommand);
-  }
+    //delay(delayStepCloserToCommand);
+  //}
 }
 
 /**
@@ -187,7 +189,7 @@ float limitStep(float currentValue, float targetValue, float maxStep) {
   return targetValue;
 }
 
-
+/*
 //only for debbuging --> native in ArduinoIDE
 void delay(int number_of_seconds)
 {
@@ -201,6 +203,8 @@ void delay(int number_of_seconds)
 	while (clock() < start_time + milli_seconds)
 		;
 }
+
+*/
 
 /*
 int speedProfileApplication(enum SpeedProfileType speedProfileType, int depthPercentage) {

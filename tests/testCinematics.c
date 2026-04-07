@@ -74,7 +74,7 @@ void testApplyServoCommand() {
     printf("theta 1 : %f \n theta 2 : %f \n theta 3 : %f \n",
         servoSet.servoLeft.angleCommand, servoSet.servoRight.angleCommand, servoSet.servoZ.angleCommand);
     printf("reacheable : %d \n", servoSet.reachable);
-    applyServoCommand(&servoSet, 1000);
+    applyServoCommand(&servoSet, 5);
 }
 
 void testLimitStep() {
