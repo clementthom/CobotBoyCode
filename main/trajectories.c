@@ -1,0 +1,182 @@
+#include "trajectories.h"
+
+
+Coordinates convoyeurEntree;
+Coordinates convoyeurSortie;
+Coordinates machineA;
+Coordinates machineB;
+Coordinates initPosition;
+
+Zone obstacle1;
+Zone workingZone;
+
+
+/**
+ * Function : initCoordinates
+ * --------------
+ * affects values to action points coordinates (initialisation)
+ * 
+ * no parameters
+ * 
+ * returns : no returns (void)
+ */
+
+void initCoordinates() {
+    convoyeurEntree.x=-150.0;
+    convoyeurEntree.y=-5.0;
+    convoyeurEntree.z=0.5;
+
+    convoyeurSortie.x=150.0;
+    convoyeurSortie.y=-5.0;
+    convoyeurSortie.z=0.5;
+
+    machineA.x=-150.0;
+    machineA.y=-180.0;
+    machineA.z=50.0;
+
+    machineB.x=150.0;
+    machineB.y=-180;
+    machineB.z=0.5;
+
+    initPosition.x=0;
+    initPosition.y=-180;
+    initPosition.z=100;
+}
+/**
+ * Function : initZone
+ * --------------
+ * affects values to points coordinates delimiting all declared zones (initialisation)
+ * 
+ * no parameters
+ * 
+ * returns : no returns (void)
+ */
+void initZone() {
+    workingZone.origin.x=-300.0;
+    workingZone.origin.y=250.0;
+    workingZone.origin.z=0.0;
+
+    workingZone.farthestPointFromOrigin.x=300.0;
+    workingZone.farthestPointFromOrigin.y=-250.0;
+    workingZone.farthestPointFromOrigin.z=700.0;
+
+    workingZone.zoneType=WORKING_ZONE;
+
+
+    obstacle1.origin.x=50.0;
+    obstacle1.origin.y=-120.0;
+    obstacle1.origin.z=0.0;
+
+    obstacle1.farthestPointFromOrigin.x=120.0;
+    obstacle1.farthestPointFromOrigin.y=-250.0;
+    obstacle1.farthestPointFromOrigin.z=110.0;
+
+    obstacle1.zoneType=OBSTACLE;
+}
+
+/**
+ * Function : checkIfInZone
+ * --------------------
+ * detects if a point is in a zone
+ * 
+ * coordinates : the coordinates of the point to check
+ * zone : the zone in which the presence of the point should be verified
+ * 
+ * returns : 0 if the point is not in the zone, 1 if it is
+ */
+int checkIfInZone(Coordinates coordinates, Zone zone) {
+    //check for each axis if the point is in bounds
+    if((abs(coordinates.x) < abs(zone.origin.x)-5.0 || abs(coordinates.x)< abs(zone.farthestPointFromOrigin.x)-5.0) &&
+    (abs(coordinates.y) < abs(zone.origin.y)-5.0 || abs(coordinates.y)<abs(zone.farthestPointFromOrigin.y))-5.0 &&
+    (abs(coordinates.z) < abs(zone.origin.z)-5.0 || abs(coordinates.z)<abs(zone.farthestPointFromOrigin.z)-5.0)) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+} 
+
+/**
+ * Function : checkIfCloseToObstacle
+ * --------------------
+ * computes the distances between an object and a zone boundaries for all axis (x, y, z)
+ * 
+ * coordinates : the coordinates of the point to check
+ * zone : the zone to compare with the point
+ * 
+ * returns : the minimum distance for each axis and the zone type (see ZoneDistance struct)
+ */
+ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
+    ZoneDistances zoneDistance;
+    zoneDistance.distances.x=1000.0;
+    zoneDistance.distances.y=1000.0;
+    zoneDistance.distances.z=1000.0;
+
+
+    float difference = coordinates.x - zone.origin.x;
+    if(abs(difference) < abs(zoneDistance.distances.x)) {
+        zoneDistance.distances.x = difference;
+    }
+    difference = coordinates.x - zone.farthestPointFromOrigin.x;
+    if(abs(difference) < abs(zoneDistance.distances.x)) {
+        zoneDistance.distances.x = difference;
+    }
+    difference = coordinates.y - zone.origin.y;
+    if(abs(difference) < abs(zoneDistance.distances.y)) {
+        zoneDistance.distances.y = difference;
+    }
+    difference = coordinates.y - zone.farthestPointFromOrigin.y;
+    if(abs(difference) < abs(zoneDistance.distances.y)) {
+        zoneDistance.distances.y = difference;
+    }
+    difference = coordinates.z - zone.origin.z;
+    if(abs(difference) < abs(zoneDistance.distances.z)) {
+        zoneDistance.distances.z = difference;
+    }
+    difference = abs(coordinates.z)<abs(zone.farthestPointFromOrigin.z);
+    if(abs(difference) < abs(zoneDistance.distances.z)) {
+        zoneDistance.distances.z = difference;
+    }
+
+
+    float* smallestDistance = NULL;
+        if (zoneDistance.distances.x<zoneDistance.distances.y) {
+            if(zoneDistance.distances.x<zoneDistance.distances.z) {
+                smallestDistance = &zoneDistance.distances.x;
+            }
+            else {
+                smallestDistance = &zoneDistance.distances.z;
+            }
+        }
+        else {
+            smallestDistance = &zoneDistance.distances.y;
+        }
+        printf("smallestDistance : %f", *smallestDistance);
+
+        if(*smallestDistance<2.0) { //if smallest distance from one of the axis is smaller than 2 mm
+            zoneDistance.distances.x = 1000.0; //big values so the angles of the servo don't answer to these parameters
+            zoneDistance.distances.y = 1000.0;
+            zoneDistance.distances.z = 1000.0;
+
+            *smallestDistance = 1.0; //100/1.0 = 100% of servo power
+        }
+        if(*smallestDistance>80.0) {
+            zoneDistance.distances.x = 0.0;//no need for trajectory correction
+            zoneDistance.distances.y = 0.0;
+            zoneDistance.distances.z = 0.0;
+        }
+
+    //closestDistanceFromObstacleBounds
+    if(zone.zoneType==OBSTACLE) {
+        
+        zoneDistance.zoneType=OBSTACLE;
+    }
+
+    //closestDistanceFromWorkingZoneBounds
+    if(zone.zoneType==WORKING_ZONE) {
+
+    }
+
+
+    return zoneDistance;
+}
