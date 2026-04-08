@@ -76,29 +76,36 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     joints (point 1 and 2); 2 arms (from 1 to 2 and 2 to 3 respectively) and 1 offset from the vertical to the first 
     radial pivot. Point 3 is the Wrist end and 4 is the prehension system centre point*/
 
+    //- radius between 0 and 4
+    float radiusZServoToPrehensionCenter = sqrt((coordinates->x*coordinates->x)+(coordinates->y*coordinates->y)); 
+
+    ///- coordinates wrist end position (wrist-prehension system mechanical connection, 3)
+    //- radius between 0 and 3
+    float radiusZServoToWristEnd = radiusZServoToPrehensionCenter-sqrt((toolHeight*toolHeight)+(toolHeight*toolHeight)); 
+    float zWristEnd = coordinates->z-toolHeight; //- Height between 0 and 3 
+    //- no angle, point 3 keeps its distance to 4 constant
     
-    float radiusZServoToPrehensionCenter = sqrt(coordinates->x*coordinates->x+coordinates->y*coordinates->y); //radius between 0 and 4
-
-    ///coordinates wrist end position (wrist-prehension system mechanical connection, 3)
-    float radiusZServoToWristEnd = radiusZServoToPrehensionCenter-toolLength; //radius between 0 and 3
-    float zWristEnd = coordinates->z-toolHeight; //height between 0 and 3
-    //no angle, point 3 keeps its distance to 4 constant
 
 
-    float radiusZservoToPivot1 = sqrt(xOffsetPivot1*xOffsetPivot1+zOffsetPivot1*zOffsetPivot1); //radius between 0 and 1
+    float radiusZservoToPivot1 = sqrt(xOffsetPivot1*xOffsetPivot1+zOffsetPivot1*zOffsetPivot1); //- radius between 0 and 1
     float zPivot1 = zOffsetPivot1; //pivot joint 1 height
 
-
+    //- distance between 1 and 3 --> hypothenus of 13-3Horizontal-Horizontal1 triangle
     float distancePivot1WristEnd = sqrt((coordinates->x - xOffsetPivot1- toolLength)*(coordinates->x - xOffsetPivot1- toolLength)
-        + (coordinates->z-zOffsetPivot1-toolHeight)*(coordinates->z-zOffsetPivot1-toolHeight));
-    //use of Al-Kashi's theorem to get Pivot 2 height and radius --> a²=b²+c²-2bccos(alpha), a opposed to alpha
+        + (coordinates->z-zOffsetPivot1+toolHeight)*(coordinates->z-zOffsetPivot1+toolHeight));
+    //- use of Al-Kashi's theorem to get Pivot 2 height and radius --> a²=b²+c²-2bccos(alpha), a line2-3 opposed to alpha, b length Arm1, c length line 1-3
+    //- angle between line 1-3 and Arm 1  
     float angleLine13ToLine12 = acos(((distancePivot1WristEnd*distancePivot1WristEnd)
                                     +(lenghtArm1*lenghtArm1)- (lengthArm2*lengthArm2))
-        / (2*lenghtArm1*lengthArm2));
-    float angleHorizontalToLine13 = atan2(coordinates->x-xOffsetPivot1- toolLength, coordinates->z-zOffsetPivot1- toolHeight);
+        / (2*lenghtArm1*distancePivot1WristEnd));
+    //- angle between the x axis and the line 1-3
+    float angleHorizontalToLine13 = atan2(coordinates->x-xOffsetPivot1- toolLength, coordinates->z-zOffsetPivot1+ toolHeight);
+    //- angle between the x axis and Arm1 --> sum of the angles between the x axis and the line 1-3, and angle between line 1-3 and Arm 1
     float angleHorizontalToLine12 = angleHorizontalToLine13+angleLine13ToLine12;
     
+    //- height of pivot2
     float zPivot2 = sin(angleHorizontalToLine12)*lenghtArm1 + zPivot1;
+    //- distance between 0 and 2
     float radiusZservoToPivot2 = sqrt(((cos(angleHorizontalToLine12))*lenghtArm1 + xOffsetPivot1)*(cos(angleHorizontalToLine12)*lenghtArm1 + xOffsetPivot1)
                                 +((sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1)*(sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1))) ;
 
@@ -109,12 +116,12 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     //angle between the 1-2 arm and the ground - theta2
     float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
     //horizontal angle between 0 and 4 - theta3
-    float angleZServoPrehensionCenterCorrected = atan(coordinates->x/coordinates->y); 
+    float angleZServoPrehensionCenterCorrected = atan(coordinates->x/(-coordinates->y)); 
 
     
     servoSet->servoLeft.angleCommand = angleArm2ToHorizontalCorrected*(180.0/M_PI)+180.0 + degOffsetLeft;
     servoSet->servoRight.angleCommand = 180.0 - (angleHorizontalToArm1Corrected+angleArm2ToHorizontalCorrected)*(180.0/M_PI) + degOffsetRight;
-    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI) + degOffsetZ;
+    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI) + degOffsetZ- 90; //-90 because 0° is full left
 
     //check angles validity
     if(servoSet->servoLeft.angleCommand > 10 && servoSet->servoLeft.angleCommand < 160 && servoSet->servoRight.angleCommand > 0
