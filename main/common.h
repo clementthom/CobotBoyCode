@@ -14,6 +14,25 @@ typedef enum {
     WORKING_ZONE
 }ZoneType;
 
+//Cycle steps, including destination and prehension commands
+enum CycleStep {
+    CONVOYEUR_ENTREE,
+    CONVOYEUR_SORTIE,
+    MACHINE_A,
+    MACHINE_B,
+    INIT,
+    GRAB_OBJECT,
+    RELEASE_OBJECT
+};
+
+
+//- lists the different actions possible for the prehension subsystem
+enum PrehensionStatus {
+    GRAB,
+    RELEASE,
+    KEEP_CURRENT_PREHENSION_POSITION,
+    UNKNOWN_STATUS //when no valid instruction is given
+};
 
 ////Structures
 

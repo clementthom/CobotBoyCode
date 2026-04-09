@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 #include "../main/trajectories.h"
-#include "../main/trajectories.c"
+#include "../main/trajectories.cpp"
 
 void testInit();
 void testCheckIfInZone();

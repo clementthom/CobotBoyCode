@@ -176,3 +176,112 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
 void changeServosSteps() {
     
 }
+
+
+/**
+ * Function : stepActions
+ * --------------------
+ * - change the input coordinates depending on the selected cycle step and define the action the prehension system has to perform
+ * 
+ * 
+ * - stepToken : name of the selected robot action (CycleStep enum)
+ * - coordinates : pointer of the coordinates to change (destination coordinates)
+ * 
+ * 
+ * - returns : the action the prehension has to perform depending on the cycle step (PrehensionStatus enum), after coordinates modification
+ */
+PrehensionStatus stepActions(CycleStep stepToken, Coordinates* coordinates) {
+    switch (stepToken) {
+    case CONVOYEUR_ENTREE:
+        *coordinates=convoyeurEntree;
+        return KEEP_CURRENT_PREHENSION_POSITION;
+
+    case CONVOYEUR_SORTIE:
+        *coordinates=convoyeurSortie;
+        return KEEP_CURRENT_PREHENSION_POSITION;
+
+    case MACHINE_A:
+        *coordinates=machineA;
+        return KEEP_CURRENT_PREHENSION_POSITION;
+
+    case MACHINE_B:
+        *coordinates=machineB;
+        return KEEP_CURRENT_PREHENSION_POSITION;
+
+    case INIT:
+        *coordinates=initPosition;
+        return RELEASE;
+
+    case GRAB_OBJECT:
+        return GRAB;
+
+    case RELEASE_OBJECT:
+        return RELEASE;
+    }
+    return UNKNOWN_STATUS;
+}
+
+/**
+ * Function : cycleExecution
+ * --------------------
+ * - executes the cycle steps sequence; defines the entire working cycle
+ * 
+ * - Parameters :
+ * -- coordinates : pointer of the coordinates to change (destination coordinates)
+ * -- actionPrehension : pointer of the action the prehension system will perform upon the step the cycle is at
+ * -- nextStepIndex : pointer of the step to perform in the sequence
+ * 
+ * 
+ * returns : nothing, changes the destination coordinates, defines the action to transmit to the prehension system and increments/reset to 0 the step sequence index (pointers)
+ */
+void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actionPrehension, int* nextStepIndex) {
+    switch (*nextStepIndex) {
+    case 0: //step 0 : initialisation
+        *actionPrehension = stepActions(INIT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 1: 
+        *actionPrehension = stepActions(CONVOYEUR_ENTREE, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 2:
+        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 3: 
+        *actionPrehension = stepActions(MACHINE_A, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 4: 
+        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 5:
+        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 6: 
+        *actionPrehension = stepActions(MACHINE_B, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 7: 
+        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 8: 
+        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 9:
+        *actionPrehension = stepActions(CONVOYEUR_SORTIE, destinationCoordinates);
+        *nextStepIndex ++;
+        break;
+    case 10: 
+        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+        *nextStepIndex =0;
+        break;
+    default:
+        printf("error : this cycle step isn't defined.\n");
+    } 
+
+}
