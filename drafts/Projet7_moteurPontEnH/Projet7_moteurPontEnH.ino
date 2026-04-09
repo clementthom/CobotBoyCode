@@ -36,7 +36,7 @@ void loop() {
     digitalWrite(7, HIGH); //INB à 1
     digitalWrite(6, LOW); //INA à 0 
     analogWrite(3, 1023); //broche 3 à 0 --> PWM à 0
-    delay(200); 
+    delay(2000); 
     analogWrite(3, 0); //broche 3 à 0 --> PWM à 0
     actionBlack = false;
   }
@@ -45,7 +45,7 @@ void loop() {
     digitalWrite(7, LOW); //INB à 0
     digitalWrite(6, HIGH); //INA à 1 
     analogWrite(3, 1023); //broche 3 à 1 --> PWM à 100
-    delay(200);
+    delay(2000);
     analogWrite(3, 0); //broche 3 à 0 --> PWM à 0
     actionGreen = false;
   }

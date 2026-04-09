@@ -8,17 +8,17 @@
 // ======================================================
 
 // Longueurs des deux bras (mm)
-const int lenghtArm1 = 150; //1-2
-const int lengthArm2= 143; //2-3
+const float lenghtArm1 = 150.0; //1-2
+const float lengthArm2= 143.0; //2-3
 
-// Décalages mécaniques du pivot du bras 1 par rapport à l'origine globale (en mm)
-const int xOffsetPivot1 = 20;
-const int zOffsetPivot1 = 75;
+// Décalages mécaniques du pivot du bras 1 par rapport à l'origine globale (en mm) (cylindrical coordinates)
+const float rOffsetPivot1XY = 20.0; //radial offset on the XY plane in degrees
+const float zOffsetPivot1 = 75.0; //height offset in mm
 
 // Offsets servo (calibration, en degrés)
-const int degOffsetLeft = -20;
-const int degOffsetRight = -10;
-const int degOffsetZ = -3;
+const float degOffsetLeft = -20.0;
+const float degOffsetRight = -10.0;
+const float degOffsetZ = -2.0;
 
 // ======================================================
 // PARAMETRES PREHENSEUR
@@ -26,8 +26,8 @@ const int degOffsetZ = -3;
 
 // Le point piloté est la pointe de l'outil.
 // Le poignet est donc décalé par rapport à cette pointe.
-const int toolLength = 57;   // mm, horizontal, toujours parallèle au sol
-const int toolHeight = -15;  // mm, outil 10 mm plus bas que le poignet
+const float toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
+const float toolHeight = -15.0;  // mm, outil 15 mm plus bas que le poignet
 //on travaille en cylindrique --> pas d'angle ici
 
 // ======================================================
@@ -74,54 +74,65 @@ void coordinatesChange(Coordinates* coordinates, float xPosition, float yPositio
 void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     /*we will represent the system into a simplified version : 1 vertical pivot joint (point 0, system origin); 2 radial pivot 
     joints (point 1 and 2); 2 arms (from 1 to 2 and 2 to 3 respectively) and 1 offset from the vertical to the first 
-    radial pivot. Point 3 is the Wrist end and 4 is the prehension system centre point*/
+    radial pivot. Point 3 is the Wrist end and 4 is the prehension system centre point. 
+    A radius is in 3D (spherical), except if specified by the XY mention : in that case, the radius is the one of the cylindrical
+    coordinate system (2D projection of the 3D radius on the XY plane).
+    */
 
-    //- radius between 0 and 4
-    float radiusZServoToPrehensionCenter = sqrt((coordinates->x*coordinates->x)+(coordinates->y*coordinates->y)); 
+    //- radius between 0 and 4 on the (x;y) plane
+    float radiusZServoToPrehensionCenterXY = sqrt((coordinates->x*coordinates->x)+(coordinates->y*coordinates->y));
 
     ///- coordinates wrist end position (wrist-prehension system mechanical connection, 3)
-    //- radius between 0 and 3
-    float radiusZServoToWristEnd = radiusZServoToPrehensionCenter-sqrt((toolHeight*toolHeight)+(toolHeight*toolHeight)); 
-    float zWristEnd = coordinates->z-toolHeight; //- Height between 0 and 3 
+    //- radius between 0 and 3 projected on the (x;y) plane
+    float radiusZServoToWristEndXY = radiusZServoToPrehensionCenterXY-toolLength;
+    //- radius between 0 and 3 in 3D
+    float radiusZServoToWristEnd = sqrt((radiusZServoToWristEndXY)*(radiusZServoToWristEndXY)
+                                        +((coordinates->z-toolHeight)*(coordinates->z-toolHeight))); 
+    float zWristEnd = coordinates->z-toolHeight; //- Height between 0 and 3, toolHeight negative value
     //- no angle, point 3 keeps its distance to 4 constant
-    
 
 
-    float radiusZservoToPivot1 = sqrt(xOffsetPivot1*xOffsetPivot1+zOffsetPivot1*zOffsetPivot1); //- radius between 0 and 1
+    float radiusZservoToPivot1 = sqrt((rOffsetPivot1XY*rOffsetPivot1XY)+(zOffsetPivot1*zOffsetPivot1)); //- radius between 0 and 1
     float zPivot1 = zOffsetPivot1; //pivot joint 1 height
 
-    //- distance between 1 and 3 --> hypothenus of 13-3Horizontal-Horizontal1 triangle
-    float distancePivot1WristEnd = sqrt((coordinates->x - xOffsetPivot1- toolLength)*(coordinates->x - xOffsetPivot1- toolLength)
-        + (coordinates->z-zOffsetPivot1+toolHeight)*(coordinates->z-zOffsetPivot1+toolHeight));
+    //- projection on plane (x;y) plane of the distance between 1 and 3
+    float distancePivot1WristEndXY = radiusZServoToWristEndXY-rOffsetPivot1XY;
+    //- distance between 1 and 3 in 3D --> hypothenus of 13-3Horizontal-Horizontal1 triangle
+    float distancePivot1WristEnd = sqrt((distancePivot1WristEndXY*distancePivot1WristEndXY)
+        + ((zWristEnd-zOffsetPivot1)*(zWristEnd-zOffsetPivot1)));
     //- use of Al-Kashi's theorem to get Pivot 2 height and radius --> a²=b²+c²-2bccos(alpha), a line2-3 opposed to alpha, b length Arm1, c length line 1-3
-    //- angle between line 1-3 and Arm 1  
-    float angleLine13ToLine12 = acos(((distancePivot1WristEnd*distancePivot1WristEnd)
-                                    +(lenghtArm1*lenghtArm1)- (lengthArm2*lengthArm2))
+    //- angle between line 1-3 and Arm 1  (alpha=arcos((b²+c²-a²) / 2bc))
+    float angleLine13ToLine12 = acos(((lenghtArm1*lenghtArm1)
+                                    +(distancePivot1WristEnd*distancePivot1WristEnd) - (lengthArm2*lengthArm2))
         / (2*lenghtArm1*distancePivot1WristEnd));
     //- angle between the x axis and the line 1-3
-    float angleHorizontalToLine13 = atan2(coordinates->x-xOffsetPivot1- toolLength, coordinates->z-zOffsetPivot1+ toolHeight);
-    //- angle between the x axis and Arm1 --> sum of the angles between the x axis and the line 1-3, and angle between line 1-3 and Arm 1
+    float angleHorizontalToLine13 = atan2(zWristEnd-zOffsetPivot1, distancePivot1WristEndXY);
+    //- angle between the x axis and Arm1 (theta2) --> sum of the angles between the (x;y) plane and the line 1-3, and angle between line 1-3 and Arm 1
     float angleHorizontalToLine12 = angleHorizontalToLine13+angleLine13ToLine12;
     
     //- height of pivot2
     float zPivot2 = sin(angleHorizontalToLine12)*lenghtArm1 + zPivot1;
+    //- projection on plane (x;y) to distance between 0 and 2
+    float radiusZServoToPivot2XY = rOffsetPivot1XY+ cos(angleHorizontalToLine12)*lenghtArm1;
     //- distance between 0 and 2
-    float radiusZservoToPivot2 = sqrt(((cos(angleHorizontalToLine12))*lenghtArm1 + xOffsetPivot1)*(cos(angleHorizontalToLine12)*lenghtArm1 + xOffsetPivot1)
-                                +((sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1)*(sin(angleHorizontalToLine12)*lenghtArm1 + zOffsetPivot1))) ;
-
+    float radiusZservoToPivot2 = sqrt((zPivot2*zPivot2)
+        +((rOffsetPivot1XY+cos(angleHorizontalToLine12)*lenghtArm1)*(rOffsetPivot1XY+cos(angleHorizontalToLine12)*lenghtArm1)));
     
     //angles in rad 
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 
-    float angleArm2ToHorizontalCorrected = -asin((zPivot2-zWristEnd)/(float)lengthArm2); 
+    float angleArm2ToHorizontalCorrected = atan2((zWristEnd-zPivot2),(radiusZServoToWristEndXY-radiusZServoToPivot2XY)); 
+    printf("theta1 : %f\n", angleArm2ToHorizontalCorrected);
     //angle between the 1-2 arm and the ground - theta2
     float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
+    printf("theta2 : %f\n", angleHorizontalToArm1Corrected);
     //horizontal angle between 0 and 4 - theta3
-    float angleZServoPrehensionCenterCorrected = atan(coordinates->x/(-coordinates->y)); 
+    float angleZServoPrehensionCenterCorrected = atan2(-coordinates->y,coordinates->x); 
+    printf("theta3 : %f\n", angleZServoPrehensionCenterCorrected);
 
     
-    servoSet->servoLeft.angleCommand = angleArm2ToHorizontalCorrected*(180.0/M_PI)+180.0 + degOffsetLeft;
-    servoSet->servoRight.angleCommand = 180.0 - (angleHorizontalToArm1Corrected+angleArm2ToHorizontalCorrected)*(180.0/M_PI) + degOffsetRight;
-    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI) + degOffsetZ- 90; //-90 because 0° is full left
+    servoSet->servoLeft.angleCommand = 180+angleArm2ToHorizontalCorrected*(180.0/M_PI) + degOffsetLeft;
+    servoSet->servoRight.angleCommand = 180 - angleHorizontalToArm1Corrected*(180.0/M_PI) + degOffsetRight;
+    servoSet->servoZ.angleCommand = angleZServoPrehensionCenterCorrected*(180.0/M_PI) + degOffsetZ; //0° is full left
 
     //check angles validity
     if(servoSet->servoLeft.angleCommand > 10 && servoSet->servoLeft.angleCommand < 160 && servoSet->servoRight.angleCommand > 0
@@ -130,7 +141,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     }
     else {
         servoSet->reachable=0;
-        //printf("Selected destination non reachable");
+        printf("Selected destination non reachable");
     }
 }
 
@@ -145,12 +156,12 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
  * returns : no returns (void).
  */
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
-  /*  
+  
   if (!servoSet->reachable) return;
 
   int done = 0; //target not reached yet
 
-  while (!done) { */
+  while (!done) { 
     printf("servoLeft \n = ");
     servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
@@ -162,7 +173,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
         servoSet->servoZ.maxStep);
 
     //writeServosMicroseconds(currentCmdA, currentCmdB, currentCmdZ);
-    /*
+    
     //done if angle difference between command and current position is smaller than 0.05 degrees
     if(abs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
       abs(servoSet->servoRight.currentAngle - servoSet->servoRight.angleCommand) < 0.05 &&
@@ -170,10 +181,10 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
 
         done ++;
     }
-    */
+    
 
-    //delay(delayStepCloserToCommand);
-  //}
+    delay(delayStepCloserToCommand);
+  }
 }
 
 /**
@@ -197,7 +208,7 @@ float limitStep(float currentValue, float targetValue, float maxStep) {
   return targetValue;
 }
 
-/*
+
 //only for debbuging --> native in ArduinoIDE
 void delay(int number_of_seconds)
 {
@@ -212,7 +223,7 @@ void delay(int number_of_seconds)
 		;
 }
 
-*/
+
 
 /*
 int speedProfileApplication(enum SpeedProfileType speedProfileType, int depthPercentage) {

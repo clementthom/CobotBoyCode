@@ -13,8 +13,8 @@ void testLimitStep();
 
 int main() {
     //testCoordinatesChange();
-    //testAngles();
-    testApplyServoCommand();
+    testAngles();
+    //testApplyServoCommand();
     //testLimitStep();
     printf("fin");
 }
@@ -35,9 +35,9 @@ void testAngles() {
     Coordinates coordinates;
     ServoSet servoSet;
 
-    coordinates.x=100;
-    coordinates.y=100;
-    coordinates.z=100;
+    coordinates.x=100.0;
+    coordinates.y=-100.0;
+    coordinates.z=100.0;
 
     servoSet.servoLeft.angleOffset=-20.0;
     servoSet.servoRight.angleOffset=10.0;
@@ -45,7 +45,8 @@ void testAngles() {
 
     coordinatesToAngles(&coordinates, &servoSet);
 
-    printf("theta 1 : %f \n theta 2 : %f \n theta 3 : %f \n",
+    printf("positions : \n x : %f   \ny : %f    \nz : %f \n \n", coordinates.x, coordinates.y, coordinates.z);
+    printf("angleLeft : %f\nangleRight : %f \nangleZ : %f \n",
         servoSet.servoLeft.angleCommand, servoSet.servoRight.angleCommand, servoSet.servoZ.angleCommand);
     printf("reacheable : %d \n", servoSet.reachable);
 }

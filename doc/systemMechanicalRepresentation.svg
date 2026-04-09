@@ -394,7 +394,7 @@
          id="tspan39"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Liberation Sans';-inkscape-font-specification:'Liberation Sans Bold';fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.8;stroke-dasharray:0.8, 2.4;stroke-dashoffset:0"
          x="57.954353"
-         y="113.24131">xOffsetPivot1</tspan></text>
+         y="113.24131">rOffsetPivotXY1</tspan></text>
     <text
        xml:space="preserve"
        style="font-style:oblique;font-weight:600;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:'FreeSans Semi-Bold Oblique';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.8;stroke-linecap:square;stroke-miterlimit:3.9;stroke-dasharray:0.8, 2.4;stroke-dashoffset:0"
@@ -411,7 +411,10 @@
        style="font-style:oblique;font-weight:600;font-size:4.23333px;font-family:FreeSans;-inkscape-font-specification:'FreeSans Semi-Bold Oblique';text-align:center;writing-mode:lr-tb;direction:ltr;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.8;stroke-linecap:square;stroke-miterlimit:3.9;stroke-dasharray:0.8, 2.4;stroke-dashoffset:0"
        x="160.61266"
        y="94.720467"
-       id="text42"><tspan
+       id="text42"
+       inkscape:export-filename="text42.png"
+       inkscape:export-xdpi="96"
+       inkscape:export-ydpi="96"><tspan
          sodipodi:role="line"
          id="tspan42"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:'Liberation Sans';-inkscape-font-specification:'Liberation Sans Bold';fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.8;stroke-dasharray:0.8, 2.4;stroke-dashoffset:0"

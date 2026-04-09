@@ -30,7 +30,7 @@ void coordinatesChange (Coordinates* coordinates, float xPosition, float yPositi
 void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet);
 void applyServoCommand(ServoSet* servoSet, int delayStepCloserToCurrent);
 float limitStep(float currentValue, float targetValue, float maxStep);
-//void delay(int milli_seconds); //only for debbuging
+void delay(int milli_seconds); //only for debbuging
 int speedProfileApplication(enum SpeedProfileType speedProfileType);
 
 
