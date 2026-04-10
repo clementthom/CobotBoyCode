@@ -283,5 +283,4 @@ void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actio
     default:
         printf("error : this cycle step isn't defined.\n");
     } 
-
 }

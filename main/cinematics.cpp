@@ -61,6 +61,7 @@ void coordinatesChange(Coordinates* coordinates, float xPosition, float yPositio
   coordinates->z=zPosition;
 }
 
+
 /**
  * Function : coordinatesToAngles
  * ------------
@@ -103,7 +104,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     //- use of Al-Kashi's theorem to get Pivot 2 height and radius --> a²=b²+c²-2bccos(alpha), a line2-3 opposed to alpha, b length Arm1, c length line 1-3
     //- angle between line 1-3 and Arm 1  (alpha=arcos((b²+c²-a²) / 2bc))
     float angleLine13ToLine12 = acos(((lenghtArm1*lenghtArm1)
-                                    +(distancePivot1WristEnd*distancePivot1WristEnd) - (lengthArm2*lengthArm2))
+                                    +(distancePivot1WristEndXY*distancePivot1WristEndXY) - (lengthArm2*lengthArm2))
         / (2*lenghtArm1*distancePivot1WristEnd));
     //- angle between the x axis and the line 1-3
     float angleHorizontalToLine13 = atan2(zWristEnd-zOffsetPivot1, distancePivot1WristEndXY);
@@ -116,7 +117,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     float radiusZServoToPivot2XY = rOffsetPivot1XY+ cos(angleHorizontalToLine12)*lenghtArm1;
     //- distance between 0 and 2
     float radiusZservoToPivot2 = sqrt((zPivot2*zPivot2)
-        +((rOffsetPivot1XY+cos(angleHorizontalToLine12)*lenghtArm1)*(rOffsetPivot1XY+cos(angleHorizontalToLine12)*lenghtArm1)));
+        +(radiusZServoToPivot2XY)*radiusZServoToPivot2XY);
     
     //angles in rad 
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 

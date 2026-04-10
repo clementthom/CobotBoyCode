@@ -35,9 +35,9 @@ void testAngles() {
     Coordinates coordinates;
     ServoSet servoSet;
 
-    coordinates.x=100.0;
-    coordinates.y=-100.0;
-    coordinates.z=100.0;
+    coordinates.x=-160.0;
+    coordinates.y=-115.0;
+    coordinates.z=10.0;
 
     servoSet.servoLeft.angleOffset=-20.0;
     servoSet.servoRight.angleOffset=10.0;
