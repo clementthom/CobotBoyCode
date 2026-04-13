@@ -1,16 +1,6 @@
 #include "trajectories.h"
 
 
-Coordinates convoyeurEntree;
-Coordinates convoyeurSortie;
-Coordinates machineA;
-Coordinates machineB;
-Coordinates initPosition;
-
-Zone obstacle1;
-Zone workingZone;
-
-
 /**
  * Function : initCoordinates
  * --------------
@@ -41,6 +31,7 @@ void initCoordinates() {
     initPosition.x=0;
     initPosition.y=-180;
     initPosition.z=100;
+
 }
 /**
  * Function : initZone
@@ -238,49 +229,55 @@ void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actio
     switch (*nextStepIndex) {
     case 0: //step 0 : initialisation
         *actionPrehension = stepActions(INIT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1; //for some reason it doesn't work with ++ (verified with debugger)
         break;
     case 1: 
         *actionPrehension = stepActions(CONVOYEUR_ENTREE, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 2:
         *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 3: 
         *actionPrehension = stepActions(MACHINE_A, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 4: 
         *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 5:
         *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 6: 
         *actionPrehension = stepActions(MACHINE_B, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 7: 
         *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 8: 
         *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 9:
         *actionPrehension = stepActions(CONVOYEUR_SORTIE, destinationCoordinates);
-        *nextStepIndex ++;
+        *nextStepIndex +=1;
         break;
     case 10: 
         *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex =0;
+        *nextStepIndex +=1;
+        break;
+    case 11: //step 0 : initialisation
+        *actionPrehension = stepActions(INIT, destinationCoordinates);
+        *nextStepIndex =0; 
         break;
     default:
         printf("error : this cycle step isn't defined.\n");
+        *actionPrehension = stepActions(INIT, destinationCoordinates);
+        *nextStepIndex =0;
     } 
 }
