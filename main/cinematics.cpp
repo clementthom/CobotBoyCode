@@ -157,8 +157,10 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
  * returns : no returns (void).
  */
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
-  
-  if (!servoSet->reachable) return;
+
+    /* //PC part - for debugging (delay() from computer)
+    
+    if (!servoSet->reachable) return;
 
   int done = 0; //target not reached yet
 
@@ -186,6 +188,21 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
 
     delay(delayStepCloserToCommand);
   }
+    */
+
+    //arduino part : to uncomment when flashing to the arduino mega
+
+    printf("servoLeft \n = ");
+    servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
+        servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
+    printf("servoRight \n = ");
+    servoSet->servoRight.currentAngle = limitStep(servoSet->servoRight.currentAngle, servoSet->servoRight.angleCommand, 
+        servoSet->servoRight.maxStep);
+    printf("servoZ \n = ");
+    servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
+        servoSet->servoZ.maxStep);
+  
+  
 }
 
 /**

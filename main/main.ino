@@ -22,8 +22,9 @@ Servo servoRight;
 Servo servoZ;
 
 ServoSet servoSet;
-
 Coordinates destination;
+PrehensionStatus prehensionStatus;
+int cycleStepIndex;
 
 
 // ======================================================
@@ -37,6 +38,10 @@ void setup() {
   servoRight.attach(SERVO_RIGHT_PIN);
   servoZ.attach(SERVO_Z_PIN);
 
+  initCoordinates();
+  initZone();
+  prehensionStatus=UNKNOWN_STATUS;
+  cycleStepIndex=0;
 
   servoSet.servoLeft.angleOffset=-20.0;
   servoSet.servoRight.angleOffset=10.0;
@@ -55,8 +60,8 @@ void setup() {
   Coordinates currentPosition;
   //initialisation position initiale de l'outil (pointe préhenseur, point théorique)
   currentPosition.x=100.0;
-  currentPosition.y=100.0;
-  currentPosition.z=100.0;
+  currentPosition.x=-100.0;
+  currentPosition.x=100.0;
 
 
   coordinatesToAngles(&currentPosition, &servoSet);
@@ -73,10 +78,6 @@ void setup() {
   servoSet.servoLeft.currentAngle = servoSet.servoLeft.angleCommand;
   servoSet.servoRight.currentAngle = servoSet.servoRight.angleCommand;
   servoSet.servoZ.currentAngle = servoSet.servoZ.angleCommand;
-
-  destination.x=150.0;
-  destination.y=180.0;
-  destination.z=0.5;
   
   delay(5000);
   /*
@@ -91,34 +92,26 @@ void loop() {
 
   Serial.println("loop");
   
-  Serial.print("angle 1 : ");
-  Serial.println(servoSet.servoLeft.currentAngle);
-  Serial.print("angle 2 : ");
-  Serial.println(servoSet.servoRight.currentAngle);
-  Serial.print("angle 3 : ");
-  Serial.println(servoSet.servoZ.currentAngle);
-
-
-  coordinatesToAngles(&destination, &servoSet) ;
-
-  Serial.print("consigne angle 1 : ");
-  Serial.println(servoSet.servoLeft.angleCommand);
-  Serial.print("consigne angle 2 : ");
-  Serial.println(servoSet.servoRight.angleCommand);
-  Serial.print("consigne angle 3 : ");
-  Serial.println(servoSet.servoZ.angleCommand);
-  Serial.println(servoSet.reachable);
-
-  fullyApplyCommandToServos(&servoSet, 200);
-
-  Serial.print("consigne angle 1 : ");
-  Serial.println(servoSet.servoLeft.angleCommand);
-  Serial.print("consigne angle 2 : ");
-  Serial.println(servoSet.servoRight.angleCommand);
-  Serial.print("consigne angle 3 : ");
-  Serial.println(servoSet.servoZ.angleCommand);
-
-  delay(50);
+  do {
+      cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here
+      coordinatesToAngles(&destination, &servoSet);
+      applyServoCommand(&servoSet, 50);
+      if(prehensionStatus==0 || prehensionStatus==1) {
+          Serial.println("prehension action");
+          Serial.println(prehensionStatus);
+          Serial.println("");
+          delay(2000);
+      }
+      Serial.println("////////////////////////////////////////////////");
+      Serial.println("Prehension status : ");
+      Serial.print(prehensionStatus);
+      Serial.println("cycleStep index : ");
+      Serial.print(cycleStepIndex-1);
+      Serial.println("etape réussie : ");
+      Serial.print(servoSet.reachable);
+      Serial.println("");
+      delay(1500);
+    }while(cycleStepIndex!=0);
 }
 
 
