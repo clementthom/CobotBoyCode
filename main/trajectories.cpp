@@ -13,11 +13,11 @@
 
 void initCoordinates() {
     convoyeurEntree.x=-150.0;
-    convoyeurEntree.y=-5.0;
+    convoyeurEntree.y=-20.0;
     convoyeurEntree.z=0.5;
 
     convoyeurSortie.x=150.0;
-    convoyeurSortie.y=-5.0;
+    convoyeurSortie.y=-20.0;
     convoyeurSortie.z=0.5;
 
     machineA.x=-150.0;
