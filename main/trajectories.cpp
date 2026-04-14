@@ -1,5 +1,15 @@
 #include "trajectories.h"
 
+/////////Global variables
+Coordinates convoyeurEntree;
+Coordinates convoyeurSortie;
+Coordinates machineA;
+Coordinates machineB;
+Coordinates initPosition;
+
+Zone obstacle1;
+Zone workingZone;
+
 
 /**
  * Function : initCoordinates
@@ -12,25 +22,25 @@
  */
 
 void initCoordinates() {
-    convoyeurEntree.x=-150.0;
+    convoyeurEntree.x=-155.0;
     convoyeurEntree.y=-20.0;
     convoyeurEntree.z=0.5;
 
-    convoyeurSortie.x=150.0;
+    convoyeurSortie.x=155.0;
     convoyeurSortie.y=-20.0;
     convoyeurSortie.z=0.5;
 
-    machineA.x=-150.0;
-    machineA.y=-180.0;
-    machineA.z=50.0;
+    machineA.x=-159.0;
+    machineA.y=-96.0;
+    machineA.z=0.5;
 
-    machineB.x=150.0;
-    machineB.y=-180.0;
+    machineB.x=160.0;
+    machineB.y=-149.0;
     machineB.z=0.5;
 
     initPosition.x=0;
     initPosition.y=-180;
-    initPosition.z=100;
+    initPosition.z=0.0;
 
 }
 /**
@@ -143,7 +153,7 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
     else {
         smallestDistance = &zoneDistance.distances.y;
     }
-    printf("smallestDistance : %f", *smallestDistance);
+    //printf("smallestDistance : %f", *smallestDistance);
 
     if(*smallestDistance<2.0) { //if smallest distance from one of the axis is smaller than 2 mm
         zoneDistance.distances.x = 1000.0; //big values so the angles of the servo don't answer to these parameters
@@ -276,7 +286,7 @@ void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actio
         *nextStepIndex =0; 
         break;
     default:
-        printf("error : this cycle step isn't defined.\n");
+        //printf("error : this cycle step isn't defined.\n");
         *actionPrehension = stepActions(INIT, destinationCoordinates);
         *nextStepIndex =0;
     } 

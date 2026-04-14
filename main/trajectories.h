@@ -4,18 +4,6 @@
 #include "common.h" //for cartesian coordinates structs and cycle steps
 
 
-
-/////////Global variables
-Coordinates convoyeurEntree;
-Coordinates convoyeurSortie;
-Coordinates machineA;
-Coordinates machineB;
-Coordinates initPosition;
-
-Zone obstacle1;
-Zone workingZone;
-
-
 /////////Prototypes
 void initCoordinates();
 void initZone();

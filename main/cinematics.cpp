@@ -122,13 +122,13 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     //angles in rad 
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 
     float angleArm2ToHorizontalCorrected = atan2((zWristEnd-zPivot2),(radiusZServoToWristEndXY-radiusZServoToPivot2XY)); 
-    printf("theta1 : %f\n", angleArm2ToHorizontalCorrected);
+    //printf("theta1 : %f\n", angleArm2ToHorizontalCorrected);
     //angle between the 1-2 arm and the ground - theta2
     float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
-    printf("theta2 : %f\n", angleHorizontalToArm1Corrected);
+    //printf("theta2 : %f\n", angleHorizontalToArm1Corrected);
     //horizontal angle between 0 and 4 - theta3
     float angleZServoPrehensionCenterCorrected = atan2(-coordinates->y,coordinates->x); 
-    printf("theta3 : %f\n", angleZServoPrehensionCenterCorrected);
+    //printf("theta3 : %f\n", angleZServoPrehensionCenterCorrected);
 
     
     servoSet->servoLeft.angleCommand = 180+angleArm2ToHorizontalCorrected*(180.0/M_PI) + degOffsetLeft;
@@ -142,7 +142,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     }
     else {
         servoSet->reachable=0;
-        printf("Selected destination non reachable");
+        //printf("Selected destination non reachable");
     }
 }
 
@@ -192,13 +192,13 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
 
     //arduino part : to uncomment when flashing to the arduino mega
 
-    printf("servoLeft \n = ");
+    //printf("servoLeft \n = ");
     servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
-    printf("servoRight \n = ");
+    //printf("servoRight \n = ");
     servoSet->servoRight.currentAngle = limitStep(servoSet->servoRight.currentAngle, servoSet->servoRight.angleCommand, 
         servoSet->servoRight.maxStep);
-    printf("servoZ \n = ");
+    //printf("servoZ \n = ");
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
   
@@ -219,14 +219,14 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
 float limitStep(float currentValue, float targetValue, float maxStep) {
   float delta = targetValue - currentValue;
 
-  printf("currentValue : %f\n targetValue : %f\n maxStep : %f\n \n", currentValue, targetValue, maxStep);
+  //printf("currentValue : %f\n targetValue : %f\n maxStep : %f\n \n", currentValue, targetValue, maxStep);
 
   if (delta > maxStep) return currentValue + maxStep;
   if (delta < -maxStep) return currentValue - maxStep;
   return targetValue;
 }
 
-
+/*
 //only for debbuging --> native in ArduinoIDE
 void delay(int number_of_seconds)
 {
@@ -240,7 +240,7 @@ void delay(int number_of_seconds)
 	while (clock() < start_time + milli_seconds)
 		;
 }
-
+*/
 
 
 /*
