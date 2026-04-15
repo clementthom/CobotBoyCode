@@ -23,20 +23,20 @@ Zone workingZone;
 
 void initCoordinates() {
     convoyeurEntree.x=-155.0;
-    convoyeurEntree.y=-20.0;
-    convoyeurEntree.z=0.5;
+    convoyeurEntree.y=-19.0;
+    convoyeurEntree.z=5.0;
 
     convoyeurSortie.x=155.0;
-    convoyeurSortie.y=-20.0;
-    convoyeurSortie.z=0.5;
+    convoyeurSortie.y=-19.0;
+    convoyeurSortie.z=5.0;
 
-    machineA.x=-159.0;
-    machineA.y=-96.0;
-    machineA.z=0.5;
+    machineA.x=-155.0;
+    machineA.y=-152.0;
+    machineA.z=5.0;
 
-    machineB.x=160.0;
-    machineB.y=-149.0;
-    machineB.z=0.5;
+    machineB.x=165.0;
+    machineB.y=-117.0;
+    machineB.z=5.0;
 
     initPosition.x=0;
     initPosition.y=-180;
