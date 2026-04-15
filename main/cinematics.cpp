@@ -16,8 +16,9 @@ const float rOffsetPivot1XY = 20.0; //radial offset on the XY plane in degrees
 const float zOffsetPivot1 = 75.0; //height offset in mm
 
 // Offsets servo (calibration, en degrés)
-const float degOffsetLeft = -20.0;
-const float degOffsetRight = -10.0;
+
+const float degOffsetLeft = -8.0;
+const float degOffsetRight = -7.0;
 const float degOffsetZ = -2.0;
 
 // ======================================================
@@ -189,7 +190,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand) {
     delay(delayStepCloserToCommand);
   }
     */
-
+    
     //arduino part : to uncomment when flashing to the arduino mega
 
     //printf("servoLeft \n = ");
@@ -240,7 +241,8 @@ void delay(int number_of_seconds)
 	while (clock() < start_time + milli_seconds)
 		;
 }
-*/
+*/        
+
 
 
 /*

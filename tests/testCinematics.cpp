@@ -35,13 +35,10 @@ void testAngles() {
     Coordinates coordinates;
     ServoSet servoSet;
 
-    coordinates.x=-160.0;
-    coordinates.y=-115.0;
+    coordinates.x=-0.0;
+    coordinates.y=-150.0;
     coordinates.z=10.0;
 
-    servoSet.servoLeft.angleOffset=-20.0;
-    servoSet.servoRight.angleOffset=10.0;
-    servoSet.servoZ.angleOffset=3.0;
 
     coordinatesToAngles(&coordinates, &servoSet);
 
@@ -55,9 +52,9 @@ void testApplyServoCommand() {
     Coordinates coordinates;
     ServoSet servoSet;
 
-    coordinates.x=100;
-    coordinates.y=100;
-    coordinates.z=100;
+    coordinates.x=-155.0;
+    coordinates.y=-19.0;
+    coordinates.z=5.0;
 
     servoSet.servoLeft.angleOffset=-20.0;
     servoSet.servoRight.angleOffset=10.0;

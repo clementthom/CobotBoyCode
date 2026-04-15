@@ -97,7 +97,7 @@ void setup() {
 void loop() {
 
   Serial.println("loop");
-  
+
   do {
     cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here 
     coordinatesToAngles(&destination, &servoSet); 
@@ -116,9 +116,8 @@ void loop() {
     Serial.print("etape réussie : ");
     Serial.println(servoSet.reachable);
     Serial.println("");
-    delay(100); 
   }while(cycleStepIndex!=0);
-  delay(100);
+  
 }
 
 
@@ -130,9 +129,9 @@ void fullyApplyCommandToServos(ServoSet* servoSet, int delayCommand) {
       abs(servoSet->servoZ.currentAngle - servoSet->servoZ.angleCommand) < 0.05)) {
 
         applyServoCommand(servoSet, delayCommand); 
-        servoLeft.write(servoSet->servoLeft.currentAngle);
-        servoRight.write(servoSet->servoRight.currentAngle);
-        servoZ.write(servoSet->servoZ.currentAngle);
+        servoLeft.write(servoSet->servoLeft.currentAngle*0.944);
+        servoRight.write(servoSet->servoRight.currentAngle*0.955);
+        servoZ.write(map(servoSet->servoZ.currentAngle, 7, 173, 0,180));
 
         delay(delayCommand);
   }
