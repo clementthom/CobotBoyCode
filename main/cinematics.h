@@ -33,6 +33,7 @@ float limitStep(float currentValue, float targetValue, float maxStep);
 void delay(int milli_seconds); //only for debbuging
 int speedProfileApplication(enum SpeedProfileType speedProfileType);
 void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates);
+void initServoSet(ServoSet* servoSet);
 
 
 #endif

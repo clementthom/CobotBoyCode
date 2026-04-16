@@ -305,3 +305,14 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
     coordinates->z = zPrehensionCenter;
 }
 
+
+void initServoSet(ServoSet* servoSet) {
+    servoSet->servoLeft.angleOffset=-8.0;
+    servoSet->servoRight.angleOffset=-7.0;
+    servoSet->servoZ.angleOffset=2.5;
+
+    servoSet->servoLeft.maxStep = 1.2;
+    servoSet->servoRight.maxStep = 1.2;
+    servoSet->servoZ.maxStep = -2.0;
+}
+

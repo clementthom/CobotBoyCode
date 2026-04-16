@@ -8,8 +8,6 @@
 //Prototypes
 void fullyApplyCommandToServos(ServoSet* servoSet, int delayCommand);
 
-
-
 //Components pins
 #define SERVO_LEFT_PIN 5
 #define SERVO_RIGHT_PIN 9
@@ -21,8 +19,12 @@ Servo servoRight;
 Servo servoZ;
 
 ServoSet servoSet;
+Coordinates currentPosition;
 Coordinates destination;
+Coordinates IntermediatePosition;
+
 PrehensionStatus prehensionStatus;
+IntermediatePoint intermediatePoint;
 int cycleStepIndex;
 
 
@@ -34,46 +36,20 @@ void setup() {
   Serial.begin(9600);
 
   servoLeft.attach(SERVO_LEFT_PIN);
-  if (servoLeft.attach(SERVO_LEFT_PIN) == 0) {
-  Serial.println("Left servo attached successfully");
-  } else {
-  Serial.println("Left servo attachment failed");
-  }
   servoRight.attach(SERVO_RIGHT_PIN);
   servoZ.attach(SERVO_Z_PIN);
 
   initCoordinates();
   initZone();
+  initServoSet(&servoSet);
   prehensionStatus=UNKNOWN_STATUS;
   cycleStepIndex=0;
 
-  servoSet.servoLeft.angleOffset=-20.0;
-  servoSet.servoRight.angleOffset=10.0;
-  servoSet.servoZ.angleOffset=2.5;
-
-  servoSet.servoLeft.maxStep = 1.2;
-  servoSet.servoRight.maxStep = 1.2;
-  servoSet.servoZ.maxStep = 1.5;
-
-  Serial.println("Demarrage...");
-  
-
-  Coordinates currentPosition;
-  //initialisation position initiale de l'outil (pointe préhenseur, point théorique)
-  currentPosition.x=100.0;
-  currentPosition.y=-100.0;
-  currentPosition.z=100.0;
+    
+  currentPosition=initPosition;
   coordinatesToAngles(&currentPosition, &servoSet);
 
-  Serial.println("current prosition initialised...");
-
-  Serial.print("angle 1 : ");
-  Serial.println(servoSet.servoLeft.angleCommand);
-  Serial.print("angle 2 : ");
-  Serial.println(servoSet.servoRight.angleCommand);
-  Serial.print("angle 3 : ");
-  Serial.println(servoSet.servoZ.angleCommand);
-
+  
   servoLeft.write(servoSet.servoLeft.angleCommand);
   servoRight.write(servoSet.servoRight.angleCommand);
   servoZ.write(servoSet.servoZ.angleCommand); 
@@ -82,13 +58,7 @@ void setup() {
   servoSet.servoLeft.currentAngle = servoSet.servoLeft.angleCommand;
   servoSet.servoRight.currentAngle = servoSet.servoRight.angleCommand;
   servoSet.servoZ.currentAngle = servoSet.servoZ.angleCommand; 
-
-  Serial.print("endInit : ");  
-  Serial.println(servoSet.reachable);
-  delay(5000);
-  /*
-  initializeFromCartesianPosition(initX, initY, initZ); //takes obstacles into account
-  */
+  delay(200);
 }
 
 // ======================================================
@@ -96,28 +66,22 @@ void setup() {
 // ======================================================
 void loop() {
 
-  Serial.println("loop");
-
   do {
-    cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here 
-    coordinatesToAngles(&destination, &servoSet); 
-    fullyApplyCommandToServos(&servoSet, 50);
+    cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here
     if(prehensionStatus==0 || prehensionStatus==1) {
-        Serial.println("prehension action");
-        Serial.println(prehensionStatus);
-        Serial.println("");
-        delay(2000);
-      }
-    Serial.println("////////////////////////////////////////////////");
-    Serial.print("Prehension status : ");
-    Serial.println(prehensionStatus);
-    Serial.print("cycleStep index : ");
-    Serial.println(cycleStepIndex-1);
-    Serial.print("etape réussie : ");
-    Serial.println(servoSet.reachable);
-    Serial.println("");
+      Serial.println("prehension action");
+      Serial.println(prehensionStatus);
+      Serial.println("");
+      //actionPrehension();
+      delay(2000);
+    }
+    do {
+      intermediatePosition = trajectoryProfile(currentPosition, destination, 100, PERFORMANCE, &intermediatePoint);
+      coordinatesToAngles(&intermediatePosition, &servoSet);
+      fullyApplyCommandToServos(&servoSet, 50);
+      anglesToCoordinates(&servoSet, &currentPosition);
+    }while(intermediatePoint!=DESTINATION_POINT) ;
   }while(cycleStepIndex!=0);
-  
 }
 
 
