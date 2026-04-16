@@ -331,16 +331,38 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             intermediateDestination.z=trajMaxAltitude;
             break;
         case ECO:
-            intermediateDestination.x=destination.x*0.8;
-            intermediateDestination.y=destination.y*0.8;
+            if(abs(trajMaxAltitude-currentCoordinates.z)>1.0) {
+                intermediateDestination.x=currentCoordinates.x+(destination.x-currentCoordinates.x)*0.2;
+                intermediateDestination.y=currentCoordinates.y+(destination.y-currentCoordinates.y)*0.2;
+                intermediateDestination.z=trajMaxAltitude;
+            }
+            else {
+                intermediateDestination.x=currentCoordinates.x+(destination.x-currentCoordinates.x)*0.75;//already 20% of initial x and y have been travelled -> 80% left to do --> to do 60% of travel : 0.8*0.75=0.6
+                intermediateDestination.y=currentCoordinates.y+(destination.y-currentCoordinates.y)*0.75;
+                *intermediatePoint=INTERM_POINT_2;
+            }
             break;
         }
-        *intermediatePoint=INTERM_POINT_2;
         break;
 
     case INTERM_POINT_2:
-        intermediateDestination=destination;
-        *intermediatePoint=DESTINATION_POINT;
+    switch (cycleMode) {
+        case PERFORMANCE:
+            intermediateDestination=destination;
+            break;
+        case ECO:
+            if(abs(trajMaxAltitude-currentCoordinates.z)<1.0) {
+                intermediateDestination.x=destination.x;
+                intermediateDestination.y=destination.y;
+                intermediateDestination.z=trajMaxAltitude*0.8;
+            }
+            else {
+                intermediateDestination=destination;
+                *intermediatePoint=DESTINATION_POINT;
+            }
+            break;
+        }
+        
         break;
     default :
         *intermediatePoint=DESTINATION_POINT;

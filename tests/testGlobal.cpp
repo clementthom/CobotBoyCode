@@ -13,12 +13,14 @@
 
 
 void testApplyCycle();
-void testCyclePerf();;
+void testCyclePerf();
+void testCycleEco();
 
 
 int main() {
     //testApplyCycle();
-    testCyclePerf();
+    //testCyclePerf();
+    testCycleEco();
 }
 
 
@@ -127,6 +129,78 @@ void testCyclePerf() {
                 }
 
                 intermediatePosition = trajectoryProfile(currentPosition, destination, 100, PERFORMANCE, &intermediatePoint);
+                coordinatesToAngles(&intermediatePosition, &servoSet);
+                applyServoCommand(&servoSet, 50);
+                anglesToCoordinates(&servoSet, &currentPosition);
+            }while(intermediatePoint!=DESTINATION_POINT) ;
+        
+            intermediatePoint=DEPART_POINT; //re-initialisation trajectory profile
+        
+        }
+    }while(cycleStepIndex!=0);
+}
+
+void testCycleEco() {
+    Coordinates currentPosition = initPosition;
+    Coordinates destination;
+    Coordinates intermediatePosition;
+    ServoSet servoSet;
+
+    PrehensionStatus prehensionStatus;
+    IntermediatePoint intermediatePoint;
+    int cycleStepIndex=0;
+
+    initCoordinates();
+    initZone();
+    currentPosition=initPosition;
+
+    servoSet.servoLeft.angleOffset=-20.0;
+    servoSet.servoRight.angleOffset=10.0;
+    servoSet.servoZ.angleOffset=2.5;
+
+    servoSet.servoLeft.maxStep = 1.2;
+    servoSet.servoRight.maxStep = 1.2;
+    servoSet.servoZ.maxStep = 1.5;
+
+    coordinatesToAngles(&currentPosition, &servoSet);
+    servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
+    servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
+    servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
+
+
+    do {
+        cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here
+        if(prehensionStatus==0 || prehensionStatus==1) {
+            delay(500);
+        }
+        else {
+            do {
+                if(abs(currentPosition.x-convoyeurEntree.x)<1.0 && abs(currentPosition.y-convoyeurEntree.y)<1.0 
+                && abs(currentPosition.z-convoyeurEntree.z)<1.0) {
+                    printf("\n\nconvoyeurEntree ok\n");
+                }
+                if(abs(currentPosition.x+155.0)<1.0 && abs(currentPosition.y+19.0)<1.0 
+                && abs(currentPosition.z-80.0)<1.0) {
+                    printf("\n\npoint A-1 ok\n");
+                }
+                if(abs(currentPosition.x+155.0)<1.0 && abs(currentPosition.y+45.6)<1.0 
+                && abs(currentPosition.z-100.0)<1.0) {
+                    printf("\n\npoint A-2 ok\n");
+                }
+                if(abs(currentPosition.x+155.0)<1.0 && abs(currentPosition.y+125.0)<1.0 
+                && abs(currentPosition.z-100.0)<1.0) {
+                    printf("\n\nPoint B-1 ok\n");
+                }
+                if(abs(currentPosition.x+155.0)<1.0 && abs(currentPosition.y+152.0)<1.0 
+                && abs(currentPosition.z-80.0)<1.0) {
+                    printf("\n\nPoint B-2 ok\n");
+                }
+                if(abs(currentPosition.x-machineA.x)<1.0 && abs(currentPosition.y-machineA.y)<1.0 
+                && abs(machineA.z-convoyeurEntree.z)<1.0) {
+                    printf("\n\nmachine A ok\n");
+                }
+
+                intermediatePosition = trajectoryProfile(currentPosition, destination, 100, ECO, &intermediatePoint);
                 coordinatesToAngles(&intermediatePosition, &servoSet);
                 applyServoCommand(&servoSet, 50);
                 anglesToCoordinates(&servoSet, &currentPosition);
