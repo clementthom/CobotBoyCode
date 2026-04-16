@@ -308,11 +308,13 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
     int trajMaxAltitude;//maximum altitude the prehension system will reach during cycle
     Coordinates intermediateDestination=currentCoordinates;//coordinates of a point withing the trajectory profile 
 
+    //if current position is cycle step destination then the trajectory cycle is finished
     if(abs(currentCoordinates.x-destination.x)<1.0 && abs(currentCoordinates.y-destination.y)<1.0 
             && abs(currentCoordinates.z-destination.z)<1.0) {
             *intermediatePoint=DESTINATION_POINT;
     }
 
+    //max altitude defined, by default user defined, except if out of bounds or inferior to destination alt.
     trajMaxAltitude=selectedMaxAlt;
     if (selectedMaxAlt<=destination.z) {
         trajMaxAltitude=destination.z*2;
@@ -328,7 +330,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             intermediateDestination.z=trajMaxAltitude;
             break;
         case ECO:
-            intermediateDestination.z=trajMaxAltitude*0.8;
+            intermediateDestination.z=trajMaxAltitude*0.8; //max alt. not reached because of cut corners
             break;
         }
         *intermediatePoint=INTERM_POINT_1;
@@ -340,7 +342,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             intermediateDestination=destination;
             intermediateDestination.z=trajMaxAltitude;
             break;
-        case ECO:
+        case ECO: // we cut the first trajectory triangle (see drawing 2 : trajectoryProfile.svg)
             if(abs(trajMaxAltitude-currentCoordinates.z)>1.0) {
                 intermediateDestination.x=currentCoordinates.x+(destination.x-currentCoordinates.x)*0.2;
                 intermediateDestination.y=currentCoordinates.y+(destination.y-currentCoordinates.y)*0.2;
@@ -349,7 +351,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             else {
                 intermediateDestination.x=currentCoordinates.x+(destination.x-currentCoordinates.x)*0.75;//already 20% of initial x and y have been travelled -> 80% left to do --> to do 60% of travel : 0.8*0.75=0.6
                 intermediateDestination.y=currentCoordinates.y+(destination.y-currentCoordinates.y)*0.75;
-                *intermediatePoint=INTERM_POINT_2;
+                *intermediatePoint=INTERM_POINT_2; //not before, otherwise the corner won't be cut off
             }
             break;
         }
@@ -358,24 +360,24 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
     case INTERM_POINT_2:
     switch (cycleMode) {
         case PERFORMANCE:
-            intermediateDestination=destination;
+            intermediateDestination=destination;//no corners to cut : next stop is step destination
             break;
         case ECO:
             if(abs(trajMaxAltitude-currentCoordinates.z)<1.0) {
                 intermediateDestination.x=destination.x;
-                intermediateDestination.y=destination.y;
+                intermediateDestination.y=destination.y;//we are above the destination point
                 intermediateDestination.z=trajMaxAltitude*0.8;
             }
             else {
                 intermediateDestination=destination;
-                *intermediatePoint=DESTINATION_POINT;
+                *intermediatePoint=DESTINATION_POINT; //can only proceed if the second corner is cut
             }
             break;
         }
         
         break;
     default :
-        *intermediatePoint=DESTINATION_POINT;
+        *intermediatePoint=DESTINATION_POINT; //cycle destination reached
         break;
     }
 
