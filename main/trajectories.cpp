@@ -291,3 +291,61 @@ void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actio
         *nextStepIndex =0;
     } 
 }
+
+
+Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destination, 
+                                int selectedMaxAlt, CycleMode cycleMode, IntermediatePoint* intermediatePoint) {
+    int trajMaxAltitude;//maximum altitude the prehension system will reach during cycle
+    Coordinates intermediateDestination=currentCoordinates;//coordinates of a point withing the trajectory profile 
+
+    if(abs(currentCoordinates.x-destination.x)<1.0 && abs(currentCoordinates.y-destination.y)<1.0 
+            && abs(currentCoordinates.z-destination.z)<1.0) {
+            *intermediatePoint=DESTINATION_POINT;
+    }
+
+    trajMaxAltitude=selectedMaxAlt;
+    if (selectedMaxAlt<=destination.z) {
+        trajMaxAltitude=destination.z*2;
+    }
+    if(trajMaxAltitude>=workingZone.farthestPointFromOrigin.z) {
+        trajMaxAltitude=workingZone.farthestPointFromOrigin.z;
+    }
+
+    switch (*intermediatePoint) {
+    case DEPART_POINT:
+        switch (cycleMode) {
+        case PERFORMANCE:
+            intermediateDestination.z=trajMaxAltitude;
+            break;
+        case ECO:
+            intermediateDestination.z=trajMaxAltitude*0.8;
+            break;
+        }
+        *intermediatePoint=INTERM_POINT_1;
+        break;
+
+    case INTERM_POINT_1:
+        switch (cycleMode) {
+        case PERFORMANCE:
+            intermediateDestination=destination;
+            intermediateDestination.z=trajMaxAltitude;
+            break;
+        case ECO:
+            intermediateDestination.x=destination.x*0.8;
+            intermediateDestination.y=destination.y*0.8;
+            break;
+        }
+        *intermediatePoint=INTERM_POINT_2;
+        break;
+
+    case INTERM_POINT_2:
+        intermediateDestination=destination;
+        *intermediatePoint=DESTINATION_POINT;
+        break;
+    default :
+        *intermediatePoint=DESTINATION_POINT;
+        break;
+    }
+
+    return intermediateDestination;
+}

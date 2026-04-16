@@ -8,14 +8,16 @@ void testCoordinatesChange();
 void testAngles();
 void testApplyServoCommand();
 void testLimitStep();
+void testAnglesAndCoordinates();
 
 ///////////////
 
 int main() {
     //testCoordinatesChange();
-    testAngles();
+    //testAngles();
     //testApplyServoCommand();
     //testLimitStep();
+    testAnglesAndCoordinates();
     printf("fin");
 }
 
@@ -114,4 +116,33 @@ void testLimitStep() {
         servoSet.servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
 
     printf("angle servoLeft : %f", servoSet.servoLeft.currentAngle);
+}
+
+
+void testAnglesAndCoordinates() {
+    Coordinates input;
+    Coordinates output;
+    ServoSet servoSet;
+
+    input.x=0.0;
+    input.y=-180.0;
+    input.z=100.0;
+
+    servoSet.servoLeft.angleOffset=-8.0;
+    servoSet.servoRight.angleOffset=-7.0;
+    servoSet.servoZ.angleOffset=2.5;
+
+    servoSet.servoLeft.maxStep = 1.2;
+    servoSet.servoRight.maxStep = 1.2;
+    servoSet.servoZ.maxStep = -2.0;
+
+    coordinatesToAngles(&input, &servoSet);
+    servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
+    servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
+    servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
+
+    anglesToCoordinates(&servoSet, &output);
+    printf("\n\ninput x : %f\ninput y : %f\ninput z : %f", input.x, input.y, input.z);
+    printf("\n\noutput x : %f\noutput y : %f\noutput z : %f", output.x, output.y, output.z);
+
 }
