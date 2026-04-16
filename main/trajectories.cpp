@@ -153,7 +153,6 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
     else {
         smallestDistance = &zoneDistance.distances.y;
     }
-    //printf("smallestDistance : %f", *smallestDistance);
 
     if(*smallestDistance<2.0) { //if smallest distance from one of the axis is smaller than 2 mm
         zoneDistance.distances.x = 1000.0; //big values so the angles of the servo don't answer to these parameters
@@ -171,11 +170,6 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
     zoneDistance.zoneType = zone.zoneType;
 
     return zoneDistance;
-}
-
-
-void changeServosSteps() {
-    
 }
 
 
@@ -219,7 +213,7 @@ PrehensionStatus stepActions(CycleStep stepToken, Coordinates* coordinates) {
     case RELEASE_OBJECT:
         return RELEASE;
     }
-    return UNKNOWN_STATUS;
+    return UNKNOWN_STATUS; //To return an error so it can be processed
 }
 
 /**
@@ -293,6 +287,22 @@ void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actio
 }
 
 
+/**
+ * Function : trajectoryProfile
+ * --------------------
+ * - modifies the trajectory from one point to another by creating intermediate points by which the prehension center
+ * will pass by
+ * 
+ * - Parameters :
+ * -- currentCoordinates : pointer of the coordinates of the prehension system at the time the function is called
+ * -- destination : pointer of the coordinates of the final destination of the cycle step
+ * -- selectedMaxAlt : maximum altitude, defined by the user, of the trajectory
+ * -- cycleMode : defines if the trajectory mode is ECO or PERFORMANCE (ie PERF.)
+ * -- intermediatePoint : pointer of the coordinates of the current intermediate destination (is modified after the function run)
+ * 
+ * 
+ * returns : command coordinates, that will be affected to the intermediate point coordinates outside of the function scope
+ */
 Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destination, 
                                 int selectedMaxAlt, CycleMode cycleMode, IntermediatePoint* intermediatePoint) {
     int trajMaxAltitude;//maximum altitude the prehension system will reach during cycle

@@ -3,21 +3,26 @@
 
 #include "common.h"
 
-//Enumeration
+//Enumerations
+
+//How the speed profile behaves between 2 points
 enum SpeedProfileType {
-  CONSTANT,
-  TRAPESOIDAL_LINEAR,
-  TRAPESOIDAL_EXPONENTIAL
+  CONSTANT, // constant between points
+  TRAPESOIDAL_LINEAR, // accelerate and decelerate linearly
+  TRAPESOIDAL_EXPONENTIAL // accelerate and decelerate exponentially
 };
 
 ////Structures
+
+//Angle parameters linked to one servo
 typedef struct {
-  float maxStep;
+  float maxStep; //maximum step a servo can perform in one applyCommand (unit) cycle
   float angleCommand; //command in microseconds (angle unit)
   float currentAngle; //current angle (same remark) 
-  float angleOffset;
+  float angleOffset; //offset of a servo
 }ServoParams; //regroups all parameters linked to ONE servo
 
+//Groups all servos into one entity
 typedef struct {
   ServoParams servoLeft;
   ServoParams servoRight;

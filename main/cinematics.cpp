@@ -15,10 +15,8 @@ const float lengthArm2= 143.0; //2-3
 const float rOffsetPivot1XY = 20.0; //radial offset on the XY plane in degrees
 const float zOffsetPivot1 = 75.0; //height offset in mm
 
-// ======================================================
-// PARAMETRES PREHENSEUR
-// ======================================================
 
+//prehension system parameters
 // Le point piloté est la pointe de l'outil.
 // Le poignet est donc décalé par rapport à cette pointe.
 const float toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
@@ -206,7 +204,7 @@ float limitStep(float currentValue, float targetValue, float maxStep) {
 }
 
 
-//only for debbuging --> native in ArduinoIDE
+//timer only for debbuging --> native in ArduinoIDE
 void delay(int number_of_seconds)
 {
 	// Converting time into milli_seconds
@@ -306,6 +304,15 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
 }
 
 
+/**
+ * Function : initServoSet
+ * ------------
+ * Initialises the values of each servo inside the servo set
+ *
+ * servoSet : includes the 3 servos with their current angleCommand values
+ *
+ * returns : no returns (void), but offsets and maxSteps are initialised.
+ */
 void initServoSet(ServoSet* servoSet) {
     servoSet->servoLeft.angleOffset=-8.0;
     servoSet->servoRight.angleOffset=-7.0;
