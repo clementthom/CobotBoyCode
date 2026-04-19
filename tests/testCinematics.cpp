@@ -9,6 +9,7 @@ void testAngles();
 void testApplyServoCommand();
 void testLimitStep();
 void testAnglesAndCoordinates();
+void testSpeedProfileLinear();
 
 ///////////////
 
@@ -17,7 +18,8 @@ int main() {
     //testAngles();
     //testApplyServoCommand();
     //testLimitStep();
-    testAnglesAndCoordinates();
+    //testAnglesAndCoordinates();
+    testSpeedProfileLinear(); 
     printf("fin");
 }
 
@@ -74,7 +76,7 @@ void testApplyServoCommand() {
     printf("theta 1 : %f \n theta 2 : %f \n theta 3 : %f \n",
         servoSet.servoLeft.angleCommand, servoSet.servoRight.angleCommand, servoSet.servoZ.angleCommand);
     printf("reacheable : %d \n", servoSet.reachable);
-    applyServoCommand(&servoSet, 5);
+    //applyServoCommand(&servoSet, 5); //works with a former version of the code
 }
 
 void testLimitStep() {
@@ -145,4 +147,60 @@ void testAnglesAndCoordinates() {
     printf("\n\ninput x : %f\ninput y : %f\ninput z : %f", input.x, input.y, input.z);
     printf("\n\noutput x : %f\noutput y : %f\noutput z : %f", output.x, output.y, output.z);
 
+}
+
+
+void testSpeedProfileLinear() {
+    Coordinates currentPosition;
+    Coordinates destination;
+    Coordinates intermediatePosition;
+    ServoSet servoSet;
+
+    int elapsedTime=0;
+    int delayCommandAngle = 20;
+    initServoSet(&servoSet, delayCommandAngle);
+
+
+    currentPosition.x=-100.0;
+    currentPosition.y=-20.0;
+    currentPosition.z=5.0;
+
+    intermediatePosition.x=-0.0;
+    intermediatePosition.y=-200.0;
+    intermediatePosition.z=5.0;
+
+    destination.x=100.0;
+    destination.y=-20.0;
+    destination.z=100.0;
+
+
+    coordinatesToAngles(&currentPosition, &servoSet);
+    servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
+    servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
+    servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
+
+
+    coordinatesToAngles(&intermediatePosition, &servoSet);
+    applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTime);
+    anglesToCoordinates(&servoSet, &currentPosition);
+    
+    if(abs(currentPosition.x-intermediatePosition.x)<1 && 
+        abs(currentPosition.y-intermediatePosition.y)<1 &&
+        abs(currentPosition.z-intermediatePosition.z)<1) {
+
+        printf("\n\nintermediate position reached\n\n");
+    }
+
+
+    coordinatesToAngles(&destination, &servoSet);
+    applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTime);
+    anglesToCoordinates(&servoSet, &currentPosition);
+
+
+    if(abs(currentPosition.x==intermediatePosition.x)<1 && 
+        abs(currentPosition.y==intermediatePosition.y)<1 &&
+        abs(currentPosition.z==intermediatePosition.z)<1) {
+
+        printf("\n\ndestination position reached\n\n");
+    }
 }

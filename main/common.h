@@ -34,6 +34,13 @@ typedef enum {
     UNKNOWN_STATUS //when no valid instruction is given
 }PrehensionStatus;
 
+
+//Type of trajectory profile the robot will undertake
+typedef enum {
+    ECO,
+    PERFORMANCE
+}CycleMode;
+
 ////Structures
 
 //Tri-dimensional coordinates : x, y and z

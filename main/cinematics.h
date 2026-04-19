@@ -17,6 +17,7 @@ enum SpeedProfileType {
 //Angle parameters linked to one servo
 typedef struct {
   float maxStep; //maximum step a servo can perform in one applyCommand (unit) cycle
+  float servoMaxStep; //physical max angle a servo can perform in the defined cycle period (see datasheet)
   float angleCommand; //command in microseconds (angle unit)
   float currentAngle; //current angle (same remark) 
   float angleOffset; //offset of a servo
@@ -33,12 +34,14 @@ typedef struct {
 
 void coordinatesChange (Coordinates* coordinates, float xPosition, float yPosition, float zPosition);
 void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet);
-void applyServoCommand(ServoSet* servoSet, int delayStepCloserToCurrent);
+void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
+    CycleMode cycleMode, int elapsedTimeSinceServoCycleStart);
 float limitStep(float currentValue, float targetValue, float maxStep);
 void delay(int milli_seconds); //only for debbuging
-int speedProfileApplication(enum SpeedProfileType speedProfileType);
+void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
+    CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo);
 void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates);
-void initServoSet(ServoSet* servoSet);
+void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand);
 
 
 #endif

@@ -5,13 +5,6 @@
 
 /////////Enums
 
-
-//Type of trajectory profile the robot will undertake
-typedef enum {
-    ECO,
-    PERFORMANCE
-}CycleMode;
-
 //Current intermediate point position in a trajectory cycle
 typedef enum {
     DEPART_POINT,
