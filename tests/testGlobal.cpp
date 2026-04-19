@@ -15,12 +15,14 @@
 void testApplyCycle();
 void testCyclePerf();
 void testCycleEco();
+void testApplyCycleSpeedProfile();
 
 
 int main() {
     //testApplyCycle();
     //testCyclePerf();
-    testCycleEco();
+    //testCycleEco();
+    testApplyCycleSpeedProfile();
 }
 
 
@@ -63,7 +65,7 @@ void testApplyCycle() {
     do {
         cycleExecution(&coordinates, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here
         coordinatesToAngles(&coordinates, &servoSet);
-        applyServoCommand(&servoSet, 50);
+        //applyServoCommand(&servoSet, 50); works with older definition of applyServoCommand
         if(prehensionStatus==0 || prehensionStatus==1) {
             printf("\n\n prehension action : %d \n\n", prehensionStatus);
             delay(2000);
@@ -84,19 +86,15 @@ void testCyclePerf() {
 
     PrehensionStatus prehensionStatus;
     IntermediatePoint intermediatePoint;
-    int cycleStepIndex=0;
+    int cycleStepIndex = 0;
+    int elapsedTimeServoCycle = 0;
+    int delayCommandAngle = 20;
 
     initCoordinates();
     initZone();
+    initServoSet(&servoSet, delayCommandAngle);
     currentPosition=initPosition;
 
-    servoSet.servoLeft.angleOffset=-20.0;
-    servoSet.servoRight.angleOffset=10.0;
-    servoSet.servoZ.angleOffset=2.5;
-
-    servoSet.servoLeft.maxStep = 1.2;
-    servoSet.servoRight.maxStep = 1.2;
-    servoSet.servoZ.maxStep = 1.5;
 
     coordinatesToAngles(&currentPosition, &servoSet);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
@@ -130,7 +128,7 @@ void testCyclePerf() {
 
                 intermediatePosition = trajectoryProfile(currentPosition, destination, 100, PERFORMANCE, &intermediatePoint);
                 coordinatesToAngles(&intermediatePosition, &servoSet);
-                applyServoCommand(&servoSet, 50);
+                applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTimeServoCycle);
                 anglesToCoordinates(&servoSet, &currentPosition);
             }while(intermediatePoint!=DESTINATION_POINT) ;
         
@@ -142,25 +140,21 @@ void testCyclePerf() {
 
 void testCycleEco() {
     Coordinates currentPosition = initPosition;
-    Coordinates destination;
     Coordinates intermediatePosition;
+    Coordinates destination;
     ServoSet servoSet;
 
     PrehensionStatus prehensionStatus;
     IntermediatePoint intermediatePoint;
-    int cycleStepIndex=0;
+    int cycleStepIndex = 0;
+    int elapsedTimeServoCycle = 0;
+    int delayCommandAngle = 20;
 
     initCoordinates();
     initZone();
+    initServoSet(&servoSet, delayCommandAngle);
     currentPosition=initPosition;
 
-    servoSet.servoLeft.angleOffset=-20.0;
-    servoSet.servoRight.angleOffset=10.0;
-    servoSet.servoZ.angleOffset=2.5;
-
-    servoSet.servoLeft.maxStep = 1.2;
-    servoSet.servoRight.maxStep = 1.2;
-    servoSet.servoZ.maxStep = 1.5;
 
     coordinatesToAngles(&currentPosition, &servoSet);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
@@ -199,16 +193,66 @@ void testCycleEco() {
                 && abs(machineA.z-convoyeurEntree.z)<1.0) {
                     printf("\n\nmachine A ok\n");
                 }
-
                 intermediatePosition = trajectoryProfile(currentPosition, destination, 100, ECO, &intermediatePoint);
                 coordinatesToAngles(&intermediatePosition, &servoSet);
-                applyServoCommand(&servoSet, 50);
+                applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTimeServoCycle);
                 anglesToCoordinates(&servoSet, &currentPosition);
+                affectInitialServoPosition(&servoSet);
+
+            }while(intermediatePoint!=DESTINATION_POINT) ;
+        
+            intermediatePoint=DEPART_POINT; //re-initialisation trajectory profile        
+        }
+    }while(cycleStepIndex!=0);
+}
+
+
+void testApplyCycleSpeedProfile() {
+    Coordinates currentPosition;
+    Coordinates destination;
+    Coordinates intermediatePosition;
+    ServoSet servoSet;
+
+    PrehensionStatus prehensionStatus = UNKNOWN_STATUS;
+    IntermediatePoint intermediatePoint;
+    int cycleStepIndex = 0;
+    int elapsedTimeServoCycle = 0;
+    int delayCommandAngle = 20;
+
+
+    initCoordinates();
+    initZone();
+    initServoSet(&servoSet, delayCommandAngle);
+    currentPosition=initPosition;
+
+
+    coordinatesToAngles(&currentPosition, &servoSet);
+    servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
+    servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
+    servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
+
+    
+    printf("\n Prehension status : %d \n cycleStep index : %d\n", prehensionStatus, cycleStepIndex);
+    do {
+        cycleExecution(&destination, &prehensionStatus, &cycleStepIndex); //cycleStepIndex becomes the one of the next step here
+        if(prehensionStatus==0 || prehensionStatus==1) {
+            delay(500);
+        }
+        else {
+            do {
+                intermediatePosition = trajectoryProfile(currentPosition, destination, 100, PERFORMANCE, &intermediatePoint);
+                coordinatesToAngles(&intermediatePosition, &servoSet);
+                applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTimeServoCycle);
+                anglesToCoordinates(&servoSet, &currentPosition);
+                elapsedTimeServoCycle=0;
             }while(intermediatePoint!=DESTINATION_POINT) ;
         
             intermediatePoint=DEPART_POINT; //re-initialisation trajectory profile
         
         }
+        printf("////////////////////////////////////////////////");
+        printf("\n Prehension status : %d \n cycleStep index : %d\n etape réussie : %d\n", prehensionStatus, cycleStepIndex-1, servoSet.reachable);
+        delay(1500);
     }while(cycleStepIndex!=0);
+    
 }
-

@@ -341,6 +341,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
         case PERFORMANCE:
             intermediateDestination=destination;
             intermediateDestination.z=trajMaxAltitude;
+            *intermediatePoint=INTERM_POINT_2;
             break;
         case ECO: // we cut the first trajectory triangle (see drawing 2 : trajectoryProfile.svg)
             if(abs(trajMaxAltitude-currentCoordinates.z)>1.0) {
@@ -361,6 +362,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
     switch (cycleMode) {
         case PERFORMANCE:
             intermediateDestination=destination;//no corners to cut : next stop is step destination
+            *intermediatePoint=DESTINATION_POINT;
             break;
         case ECO:
             if(abs(trajMaxAltitude-currentCoordinates.z)<1.0) {

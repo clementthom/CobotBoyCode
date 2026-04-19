@@ -16,9 +16,10 @@ enum SpeedProfileType {
 
 //Angle parameters linked to one servo
 typedef struct {
-  float maxStep; //maximum step a servo can perform in one applyCommand (unit) cycle
   float servoMaxStep; //physical max angle a servo can perform in the defined cycle period (see datasheet)
-  float angleCommand; //command in microseconds (angle unit)
+  float startAngle; //initial position of the servo before the servo cycle starts
+  float maxStep; //maximum step a servo can perform in one applyCommand (unit) cycle
+  float angleCommand; //command in microseconds (angle unit), destination to reach
   float currentAngle; //current angle (same remark) 
   float angleOffset; //offset of a servo
 }ServoParams; //regroups all parameters linked to ONE servo

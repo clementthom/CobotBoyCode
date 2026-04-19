@@ -140,12 +140,12 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
     CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart) {
 
-     //PC part - for debugging (delay() from computer)
+    //PC part - for debugging (delay() from computer)
     
     if (!servoSet->reachable) return;
 
     int done = 0; //target not reached yet
-    printf("servoLeft, servoRight, servoZ\n");
+    printf("\n\n\nservoLeft, servoRight, servoZ\n");
 
     while (!done) { 
         speedProfileApplication(servoSet, speedProfileType, 100, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
@@ -176,20 +176,19 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         *elapsedTimeSinceServoCycleStart +=20;
     }
     
-   /*
+   
     
     //arduino part : to uncomment when flashing to the arduino mega
 
-    //printf("servoLeft \n = ");
+    speedProfileApplication(servoSet, speedProfileType, 100, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
+
     servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
-    //printf("servoRight \n = ");
     servoSet->servoRight.currentAngle = limitStep(servoSet->servoRight.currentAngle, servoSet->servoRight.angleCommand, 
         servoSet->servoRight.maxStep);
-    //printf("servoZ \n = ");
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-    */
+    
 }
 
 /**
@@ -227,7 +226,6 @@ void delay(int number_of_seconds)
 	while (clock() < start_time + milli_seconds)
 		;
 }
-
 
 
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
@@ -281,9 +279,15 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
     switch (speedProfileType) {
     case CONSTANT: // unchanged current angles if not even one servo reached its destination, otherwise the other finish their angle
         if(servoSet->servoLeft.maxStep==0 || servoSet->servoRight.maxStep==0 || servoSet->servoZ.maxStep==0) { //if one servo doesn't have to move anymore
-            servoSet->servoLeft.maxStep=servoSet->servoLeft.angleCommand-servoSet->servoLeft.currentAngle;//step = difference between command and current angle --> command is reached after this step
-            servoSet->servoRight.maxStep=servoSet->servoRight.angleCommand-servoSet->servoRight.currentAngle;
-            servoSet->servoLeft.maxStep=servoSet->servoRight.angleCommand-servoSet->servoRight.currentAngle;
+            if(angleToPerformServoLeft< servoSet->servoLeft.servoMaxStep) {//if difference between current and destination angle smaller than servo max step
+                servoSet->servoLeft.maxStep=angleToPerformServoLeft;//step = difference between command and current angle --> command is reached after this step
+            }
+            if(angleToPerformServoRight < servoSet->servoRight.servoMaxStep) {
+                servoSet->servoRight.maxStep=angleToPerformServoRight;
+            }
+            if(angleToPerformServoZ < servoSet->servoZ.servoMaxStep) {
+                servoSet->servoZ.maxStep=angleToPerformServoZ;
+            }
         }
         break;
     
@@ -412,5 +416,21 @@ void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand) {
     servoSet->servoLeft.servoMaxStep = (delayStepCloserToCommand*180 / 510); 
     servoSet->servoRight.servoMaxStep = (delayStepCloserToCommand*180 / 510);
     servoSet->servoZ.servoMaxStep = (delayStepCloserToCommand*180 / 510);
+}
+
+
+/**
+ * Function : affectInitialServoPosition
+ * ------------
+ * Affects the current angle values to the start angle values. This function must hence only be used at the end of a servo cycle
+ *
+ * servoSet : includes the 3 servos with their current angleCommand values
+ *
+ * returns : no returns (void), but start angles have their values defined.
+ */
+void affectInitialServoPosition(ServoSet* servoSet) {
+    servoSet->servoLeft.startAngle=servoSet->servoLeft.currentAngle;
+    servoSet->servoRight.startAngle=servoSet->servoRight.currentAngle;
+    servoSet->servoZ.startAngle=servoSet->servoRight.currentAngle;
 }
 
