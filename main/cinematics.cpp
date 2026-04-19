@@ -140,6 +140,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
     CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart) {
 
+    
     //PC part - for debugging (delay() from computer)
     
     if (!servoSet->reachable) return;
@@ -177,7 +178,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
     }
     
    
-    
+    /*
     //arduino part : to uncomment when flashing to the arduino mega
 
     speedProfileApplication(servoSet, speedProfileType, 100, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
@@ -188,7 +189,8 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         servoSet->servoRight.maxStep);
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-    
+ 
+    */
 }
 
 /**
