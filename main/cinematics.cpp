@@ -149,22 +149,22 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
     printf("\n\n\nservoLeft, servoRight, servoZ\n");
 
     while (!done) { 
-        speedProfileApplication(servoSet, speedProfileType, 100, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
+        speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
         
         //elapsedTimeSinceServoCycleStart is to be replaced by a timer
 
         //printf("servoLeft \n = ");
         servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
-        printf("%f, ", servoSet->servoLeft.currentAngle);
+        printf("%f, ", servoSet->servoLeft.maxStep);
         //printf("servoRight \n = ");
         servoSet->servoRight.currentAngle = limitStep(servoSet->servoRight.currentAngle, servoSet->servoRight.angleCommand, 
         servoSet->servoRight.maxStep);
-        printf("%f, ", servoSet->servoRight.currentAngle);
+        printf("%f, ", servoSet->servoRight.maxStep);
         //printf("servoZ \n = ");
         servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-        printf("%f \n", servoSet->servoZ.currentAngle);
+        printf("%f \n", servoSet->servoZ.maxStep);
     
         //done if angle difference between command and current position is smaller than 0.05 degrees
         if(abs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
@@ -174,7 +174,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
             done ++;
         }
         delay(delayStepCloserToCommand);
-        *elapsedTimeSinceServoCycleStart +=20;
+        *elapsedTimeSinceServoCycleStart +=delayStepCloserToCommand;
     }
     
    
@@ -189,8 +189,8 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         servoSet->servoRight.maxStep);
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
- 
-    */
+*/
+    
 }
 
 /**
@@ -266,6 +266,11 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
         servoSet->servoZ.maxStep=0.0;
         speedProfileType=CONSTANT; //to not undertake unnecessary processing
     }
+    else {
+        servoSet->servoLeft.maxStep*=(float)depthPercentage/100; //explicit conversion else depthPercentage/100 = 0 
+        servoSet->servoRight.maxStep*=(float)depthPercentage/100;
+        servoSet->servoZ.maxStep*=(float)depthPercentage/100;
+    } 
 
     int timeSpeedVariation;
     switch (cycleMode) {
@@ -296,15 +301,15 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
     case TRAPESOIDAL_LINEAR: { //we use brackets to create a scope for the int declarations (servoCycleDuration and remainingCycleTime)
         int servoCycleDuration = angleToPerformServoLeft/servoSet->servoLeft.maxStep;
         if(elapsedTimeSinceServoCycleStart<timeSpeedVariation) {
-            servoSet->servoLeft.maxStep*=(elapsedTimeSinceServoCycleStart/timeSpeedVariation);
-            servoSet->servoRight.currentAngle*=(elapsedTimeSinceServoCycleStart/timeSpeedVariation);
-            servoSet->servoZ.currentAngle*=(elapsedTimeSinceServoCycleStart/timeSpeedVariation);
+            servoSet->servoLeft.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
+            servoSet->servoRight.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
+            servoSet->servoZ.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
         }
-        if(elapsedTimeSinceServoCycleStart<servoCycleDuration*delayCommandServo*0.9){//also works with right or z servos
+        else if(elapsedTimeSinceServoCycleStart<servoCycleDuration*delayCommandServo*0.9){//also works with right or z servos
             int remainingCycleTime = servoCycleDuration-elapsedTimeSinceServoCycleStart;//to have shorter expressions below
-            servoSet->servoLeft.currentAngle*=(remainingCycleTime/timeSpeedVariation);
-            servoSet->servoRight.currentAngle*=(remainingCycleTime/timeSpeedVariation);
-            servoSet->servoZ.currentAngle*=(remainingCycleTime/timeSpeedVariation);
+            servoSet->servoLeft.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
+            servoSet->servoRight.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
+            servoSet->servoZ.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
         }
         break;
     }
@@ -341,6 +346,7 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
         break;
     }
     }
+
 }
 
 

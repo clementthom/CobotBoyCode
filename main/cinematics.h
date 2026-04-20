@@ -36,7 +36,7 @@ typedef struct {
 void coordinatesChange (Coordinates* coordinates, float xPosition, float yPosition, float zPosition);
 void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet);
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
-    CycleMode cycleMode, int elapsedTimeSinceServoCycleStart);
+    CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart);
 float limitStep(float currentValue, float targetValue, float maxStep);
 void delay(int milli_seconds); //only for debbuging
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
