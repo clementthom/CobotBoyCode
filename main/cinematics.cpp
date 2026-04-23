@@ -138,10 +138,15 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
  * returns : no returns (void).
  */
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
-    CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart) {
+    CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, float *anglePerformedDuringAcceleration,
+    int *elapsedTimeBeforeDeceleration, int *remainingCycleTime) {
 
     
     //PC part - for debugging (delay() from computer)
+    *anglePerformedDuringAcceleration=0;
+    *elapsedTimeBeforeDeceleration=0;
+    //this variable will be used for non-constant profiles to decelerate - value to 0 here to allow it to be initialised
+    *remainingCycleTime = -1;
     
     if (!servoSet->reachable) return;
 
@@ -149,22 +154,23 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
     printf("\n\n\nservoLeft, servoRight, servoZ\n");
 
     while (!done) { 
-        speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
+        speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand,
+                                anglePerformedDuringAcceleration, elapsedTimeBeforeDeceleration, remainingCycleTime);
         
-        //elapsedTimeSinceServoCycleStart is to be replaced by a timer
+        //elapsedTimeSinceServoCycleStart is to be replaced by a timer in the arduino code
 
         //printf("servoLeft \n = ");
         servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
-        printf("%f, ", servoSet->servoLeft.maxStep);
+        printf("%f, ", servoSet->servoLeft.currentAngle);
         //printf("servoRight \n = ");
         servoSet->servoRight.currentAngle = limitStep(servoSet->servoRight.currentAngle, servoSet->servoRight.angleCommand, 
         servoSet->servoRight.maxStep);
-        printf("%f, ", servoSet->servoRight.maxStep);
+        printf("%f, ", servoSet->servoRight.currentAngle);
         //printf("servoZ \n = ");
         servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-        printf("%f \n", servoSet->servoZ.maxStep);
+        printf("%f \n", servoSet->servoZ.currentAngle);
     
         //done if angle difference between command and current position is smaller than 0.05 degrees
         if(abs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
@@ -175,6 +181,9 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         }
         delay(delayStepCloserToCommand);
         *elapsedTimeSinceServoCycleStart +=delayStepCloserToCommand;
+        if(*remainingCycleTime!=-1) {//if remainingCycleTime initialised
+            *remainingCycleTime-=delayStepCloserToCommand;
+        }
     }
     
    
@@ -231,32 +240,37 @@ void delay(int number_of_seconds)
 
 
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
-    CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo) {
+    CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo, float *anglePerformedDuringAcceleration,
+    int *elapsedTimeBeforeDeceleration, int *remainingCycleTime) {
 
     //those variables will be affected a value depending on the maximum angle to perform out of the 3 servos
-    float angleToPerformServoLeft = abs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.angleCommand);//here, just the angle servoLeft has to perform to get to its destination
-    float angleToPerformServoRight = abs(servoSet->servoRight.currentAngle-servoSet->servoRight.angleCommand);
-    float angleToPerformServoZ= abs(servoSet->servoZ.currentAngle-servoSet->servoZ.angleCommand);
+    float currentAngleToPerformServoLeft = abs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.angleCommand);//here, just the angle servoLeft has to perform to get to its destination
+    float currentAngleToPerformServoRight = abs(servoSet->servoRight.currentAngle-servoSet->servoRight.angleCommand);
+    float currentAngleToPerformServoZ= abs(servoSet->servoZ.currentAngle-servoSet->servoZ.angleCommand);
+    //difference between destination and start angles
+    float totalAngleToPerformServoLeft = abs(servoSet->servoLeft.startAngle-servoSet->servoLeft.angleCommand);
+    float totalAngleToPerformServoRight = abs(servoSet->servoRight.startAngle-servoSet->servoRight.angleCommand);
+    float totalAngleToPerformServoZ= abs(servoSet->servoZ.startAngle-servoSet->servoZ.angleCommand);
+
 
     //steps ponderation depending on the biggest one (allows all angles destinations to be reached at the same time)
     //if servoLeft has a bigger angle to perform than the others --> must go the quickest
-    if(angleToPerformServoLeft>angleToPerformServoRight && angleToPerformServoLeft>angleToPerformServoZ) {
-        //
+    if(currentAngleToPerformServoLeft>currentAngleToPerformServoRight && currentAngleToPerformServoLeft>currentAngleToPerformServoZ) {
         //definition max angle step (for the servo cycle step) of servoLeft - can be modified by speed profiles
         servoSet->servoLeft.maxStep=servoSet->servoLeft.servoMaxStep;//servo step = max servo step 
         // ponderation for the other servos
-        servoSet->servoRight.maxStep=servoSet->servoRight.servoMaxStep*((float)angleToPerformServoRight/angleToPerformServoLeft);
-        servoSet->servoZ.maxStep=servoSet->servoZ.servoMaxStep*((float)angleToPerformServoZ/angleToPerformServoLeft);
+        servoSet->servoRight.maxStep=servoSet->servoRight.servoMaxStep*((float)currentAngleToPerformServoRight/currentAngleToPerformServoLeft);
+        servoSet->servoZ.maxStep=servoSet->servoZ.servoMaxStep*((float)currentAngleToPerformServoZ/currentAngleToPerformServoLeft);
     }
-    else if(angleToPerformServoRight>angleToPerformServoZ) { //the right servo has the most important distance to travel
+    else if(currentAngleToPerformServoRight>currentAngleToPerformServoZ) { //the right servo has the most important distance to travel
         servoSet->servoRight.maxStep=servoSet->servoRight.servoMaxStep;
-        servoSet->servoLeft.maxStep=servoSet->servoLeft.servoMaxStep*((float)angleToPerformServoLeft/angleToPerformServoRight);
-        servoSet->servoZ.maxStep=servoSet->servoZ.servoMaxStep*((float)angleToPerformServoZ/angleToPerformServoRight);
+        servoSet->servoLeft.maxStep=servoSet->servoLeft.servoMaxStep*((float)currentAngleToPerformServoLeft/currentAngleToPerformServoRight);
+        servoSet->servoZ.maxStep=servoSet->servoZ.servoMaxStep*((float)currentAngleToPerformServoZ/currentAngleToPerformServoRight);
     }
     else {//the Z servo has the most important distance to travel
         servoSet->servoZ.maxStep=servoSet->servoZ.servoMaxStep;
-        servoSet->servoLeft.maxStep=servoSet->servoLeft.servoMaxStep*((float)angleToPerformServoLeft/angleToPerformServoZ);
-        servoSet->servoRight.maxStep=servoSet->servoRight.servoMaxStep*((float)angleToPerformServoRight/angleToPerformServoZ);
+        servoSet->servoLeft.maxStep=servoSet->servoLeft.servoMaxStep*((float)currentAngleToPerformServoLeft/currentAngleToPerformServoZ);
+        servoSet->servoRight.maxStep=servoSet->servoRight.servoMaxStep*((float)currentAngleToPerformServoRight/currentAngleToPerformServoZ);
     }
     
 
@@ -283,65 +297,275 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
         break;
     }
 
+
     switch (speedProfileType) {
     case CONSTANT: // unchanged current angles if not even one servo reached its destination, otherwise the other finish their angle
         if(servoSet->servoLeft.maxStep==0 || servoSet->servoRight.maxStep==0 || servoSet->servoZ.maxStep==0) { //if one servo doesn't have to move anymore
-            if(angleToPerformServoLeft< servoSet->servoLeft.servoMaxStep) {//if difference between current and destination angle smaller than servo max step
-                servoSet->servoLeft.maxStep=angleToPerformServoLeft;//step = difference between command and current angle --> command is reached after this step
+            if(currentAngleToPerformServoLeft< servoSet->servoLeft.servoMaxStep) {//if difference between current and destination angle smaller than servo max step
+                servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;//step = difference between command and current angle --> command is reached after this step
             }
-            if(angleToPerformServoRight < servoSet->servoRight.servoMaxStep) {
-                servoSet->servoRight.maxStep=angleToPerformServoRight;
+            if(currentAngleToPerformServoRight < servoSet->servoRight.servoMaxStep) {
+                servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
             }
-            if(angleToPerformServoZ < servoSet->servoZ.servoMaxStep) {
-                servoSet->servoZ.maxStep=angleToPerformServoZ;
+            if(currentAngleToPerformServoZ < servoSet->servoZ.servoMaxStep) {
+                servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
             }
         }
         break;
     
     case TRAPESOIDAL_LINEAR: { //we use brackets to create a scope for the int declarations (servoCycleDuration and remainingCycleTime)
-        int servoCycleDuration = angleToPerformServoLeft/servoSet->servoLeft.maxStep;
-        if(elapsedTimeSinceServoCycleStart<timeSpeedVariation) {
-            servoSet->servoLeft.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
-            servoSet->servoRight.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
-            servoSet->servoZ.maxStep*=((float)elapsedTimeSinceServoCycleStart/timeSpeedVariation);
+
+        //initialisation anglePerformedDuringAcceleration if not initialised (==0)
+        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation || 
+            (currentAngleToPerformServoLeft<=totalAngleToPerformServoLeft/2)) {
+            if(*anglePerformedDuringAcceleration==0) {
+                if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> can be used as reference
+                    *anglePerformedDuringAcceleration=servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle;
+                }
+                else if(servoSet->servoRight.maxStep != 0) { 
+                    *anglePerformedDuringAcceleration=servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle;
+                }
+                else { 
+                    *anglePerformedDuringAcceleration=servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle;
+                }
+            }
         }
-        else if(elapsedTimeSinceServoCycleStart<servoCycleDuration*delayCommandServo*0.9){//also works with right or z servos
-            int remainingCycleTime = servoCycleDuration-elapsedTimeSinceServoCycleStart;//to have shorter expressions below
-            servoSet->servoLeft.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
-            servoSet->servoRight.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
-            servoSet->servoZ.maxStep*=((float)remainingCycleTime/timeSpeedVariation);
+
+        if(elapsedTimeSinceServoCycleStart<timeSpeedVariation && 
+            (currentAngleToPerformServoLeft>=totalAngleToPerformServoLeft/2)) { //if acceleration time is not reached and if not all of the servo reached half of their destination (one suffices --> synchro)
+            servoSet->servoLeft.maxStep*=((float)(elapsedTimeSinceServoCycleStart+delayCommandServo)/(timeSpeedVariation+delayCommandServo));//+servo cycle step because 0 for t=0 otherwise
+            servoSet->servoRight.maxStep*=((float)(elapsedTimeSinceServoCycleStart+delayCommandServo)/(timeSpeedVariation+delayCommandServo));
+            servoSet->servoZ.maxStep*=((float)(elapsedTimeSinceServoCycleStart+delayCommandServo)/(timeSpeedVariation+delayCommandServo));
+        }
+        else {//also works with right or z servos
+            //if remaining angle to do is equal to the reference angle performed during acceleration
+            if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> it is the reference
+                if(currentAngleToPerformServoLeft<=*anglePerformedDuringAcceleration) { //if angle diff. between current and destination angle (remaining angle) <= angle performed during acceleration --> we enter deceleration phase
+                    //initialisation remainingCycleTime if not initialised (==0)
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation+delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart+delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { //if time where deceleration was supposed to end is reached with not all destinations reached
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoLeft<=servoSet->servoLeft.maxStep*3) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        }
+                    }
+                    //deceleration curve (formula defined mathematically --> see documentation)
+                    else {
+                        servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                    }
+                    
+                }
+            }
+            else if(servoSet->servoRight.maxStep != 0) { 
+                if(currentAngleToPerformServoRight<=*anglePerformedDuringAcceleration) { 
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation+delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart+delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { //if time where deceleration was supposed to end is reached with not all destinations reached
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoRight<=servoSet->servoRight.maxStep*3) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        }
+                    }
+                    else {
+                        servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                    }
+                }
+            }
+            else { 
+                if(currentAngleToPerformServoZ<=*anglePerformedDuringAcceleration) {
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation+delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart+delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { 
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoZ<=servoSet->servoZ.maxStep*3) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                            servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        }
+                    }
+                    else {
+                        servoSet->servoLeft.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoRight.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                        servoSet->servoZ.maxStep*=((float)(*remainingCycleTime)/(timeSpeedVariation+delayCommandServo));
+                    }                    
+                }
+            }
         }
         break;
     }
     case TRAPESOIDAL_EXPONENTIAL: {
-        int servoCycleDuration = angleToPerformServoLeft/servoSet->servoLeft.maxStep*delayCommandServo;//number of steps per cycle times duration of one step
-        int exponentialCoeff; //coefficient by which we'll multiply servos steps to get exponential accelerations/decelerations
+        int servoCycleDuration;
+        float exponentialCoeff; //coefficient by which we'll multiply servos steps to get exponential accelerations/decelerations
 
-        if(elapsedTimeSinceServoCycleStart<timeSpeedVariation) {
-            //exponentialCoeff value
-            if(elapsedTimeSinceServoCycleStart==0) {
-                exponentialCoeff=0;
-            }
-            else {
-                exponentialCoeff=1-exp(-elapsedTimeSinceServoCycleStart/timeSpeedVariation);// 0 for t=0, 1 for t=timeSpeedVariation
-            }
 
-            servoSet->servoLeft.currentAngle*=exponentialCoeff;
-            servoSet->servoRight.currentAngle*=exponentialCoeff;
-            servoSet->servoZ.currentAngle*=exponentialCoeff;
+        //initialisation anglePerformedDuringAcceleration if not initialised (==0)
+        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation || 
+            (currentAngleToPerformServoLeft<=totalAngleToPerformServoLeft/2)) {
+            if(*anglePerformedDuringAcceleration==0) {
+                if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> can be used as reference
+                    *anglePerformedDuringAcceleration=servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle;
+                }
+                else if(servoSet->servoRight.maxStep != 0) { 
+                    *anglePerformedDuringAcceleration=servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle;
+                }
+                else { 
+                    *anglePerformedDuringAcceleration=servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle;
+                }
+            }
         }
-        if(elapsedTimeSinceServoCycleStart>servoCycleDuration*0.9){//if currentTime is passed  - also works with right or z servos
-            int remainingCycleTime = servoCycleDuration-elapsedTimeSinceServoCycleStart;//to have shorter expressions below
-            //we use the same formula as before - an alternative would be to use the circle equation : exponentialCoeff=sqrt(1-((cycleDuration-elapsedTime)/timeSpeedVariation)²)
-            if(elapsedTimeSinceServoCycleStart==0) {
-                exponentialCoeff=0;
+
+        if(elapsedTimeSinceServoCycleStart<timeSpeedVariation && 
+            (currentAngleToPerformServoLeft>=totalAngleToPerformServoLeft/2)) {
+            //exponentialCoeff value
+            exponentialCoeff=1-exp((float)(-elapsedTimeSinceServoCycleStart-delayCommandServo)/(timeSpeedVariation/5));// 0 for t=0, 1 for t=timeSpeedVariation
+            servoSet->servoLeft.maxStep*=exponentialCoeff;
+            servoSet->servoRight.maxStep*=exponentialCoeff;
+            servoSet->servoZ.maxStep*=exponentialCoeff;
+        }
+        else {//also works with right or z servos
+            //if remaining angle to do is equal to the reference angle performed during acceleration
+            if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> it is the reference
+                if(currentAngleToPerformServoLeft<=*anglePerformedDuringAcceleration) { //if angle diff. between current and destination angle (remaining angle) <= angle performed during acceleration --> we enter deceleration phase
+                    //initialisation remainingCycleTime if not initialised (==0)
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation-2*delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart-2*delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { //if time where deceleration was supposed to end is reached with not all destinations reached
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoLeft<=servoSet->servoLeft.maxStep*2) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                            //deceleration curve (formula defined mathematically --> see documentation)
+                            servoSet->servoLeft.maxStep*=exponentialCoeff;
+                            servoSet->servoRight.maxStep*=exponentialCoeff;
+                            servoSet->servoZ.maxStep*=exponentialCoeff;
+                        }
+                    }
+                    else {
+                        exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                        //deceleration curve (formula defined mathematically --> see documentation)
+                        servoSet->servoLeft.maxStep*=exponentialCoeff;
+                        servoSet->servoRight.maxStep*=exponentialCoeff;
+                        servoSet->servoZ.maxStep*=exponentialCoeff;
+                    }
+                    
+                }
             }
-            else {
-                exponentialCoeff=1-exp(-remainingCycleTime/timeSpeedVariation);// 0 for t=0, 1 for t=timeSpeedVariation
+            else if(servoSet->servoRight.maxStep != 0) { 
+                if(currentAngleToPerformServoRight<=*anglePerformedDuringAcceleration) { 
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation-2*delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart-2*delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { //if time where deceleration was supposed to end is reached with not all destinations reached
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoRight<=servoSet->servoRight.maxStep*2) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                            servoSet->servoLeft.maxStep*=exponentialCoeff;
+                            servoSet->servoRight.maxStep*=exponentialCoeff;
+                            servoSet->servoZ.maxStep*=exponentialCoeff;
+                        }
+                    }
+                    else {
+                        exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                        servoSet->servoLeft.maxStep*=exponentialCoeff;
+                        servoSet->servoRight.maxStep*=exponentialCoeff;
+                        servoSet->servoZ.maxStep*=exponentialCoeff;
+                    }
+                }
             }
-            servoSet->servoLeft.currentAngle*=exponentialCoeff;
-            servoSet->servoRight.currentAngle*=exponentialCoeff;
-            servoSet->servoZ.currentAngle*=exponentialCoeff;
+            else { 
+                if(currentAngleToPerformServoZ<=*anglePerformedDuringAcceleration) {
+                    if(*remainingCycleTime==-1) {
+                        if(elapsedTimeSinceServoCycleStart>timeSpeedVariation) {
+                            *remainingCycleTime=timeSpeedVariation-2*delayCommandServo;
+                        }
+                        else {
+                            *remainingCycleTime=elapsedTimeSinceServoCycleStart-2*delayCommandServo;
+                        }
+                    }
+                    if(*remainingCycleTime==0) { 
+                        *remainingCycleTime=delayCommandServo;
+                        if(currentAngleToPerformServoZ<=servoSet->servoZ.maxStep*2) {
+                            servoSet->servoLeft.maxStep=currentAngleToPerformServoLeft;
+                            servoSet->servoRight.maxStep=currentAngleToPerformServoRight;
+                            servoSet->servoZ.maxStep=currentAngleToPerformServoZ;
+                        }
+                        else {
+                            exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                            servoSet->servoLeft.maxStep*=exponentialCoeff;
+                            servoSet->servoRight.maxStep*=exponentialCoeff;
+                            servoSet->servoZ.maxStep*=exponentialCoeff;
+                        }
+                    }
+                    else {
+                        exponentialCoeff=1-exp((float)(-*remainingCycleTime)/(timeSpeedVariation/5));
+                        servoSet->servoLeft.maxStep*=exponentialCoeff;
+                        servoSet->servoRight.maxStep*=exponentialCoeff;
+                        servoSet->servoZ.maxStep*=exponentialCoeff;
+                    }
+                }
+            }
         }
         break;
     }
