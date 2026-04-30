@@ -34,16 +34,19 @@ typedef struct {
 
 
 void coordinatesChange (Coordinates* coordinates, float xPosition, float yPosition, float zPosition);
-void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet);
+void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet, Object* currentObject);
 void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
-    CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, int *remainingCycleTime);
+    CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, float *anglePerformedDuringAcceleration,
+    int *remainingCycleTime);
 float limitStep(float currentValue, float targetValue, float maxStep);
 void delay(int milli_seconds); //only for debbuging
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
     CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo, float *anglePerformedDuringAcceleration,
-    int *elapsedTimeSinceDeceleration, int *remainingCycleTime);
-void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates);
+     int *remainingCycleTime);
+void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates, Object* currentObject);
 void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand);
-
+void affectInitialServoPosition(ServoSet* servoSet);
+void objectListInit();
+void initRobotOffsets(Robot* robot);
 
 #endif

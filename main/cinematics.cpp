@@ -3,6 +3,7 @@
 #include "cinematics.h"
 
 
+ObjectList objectList;
 // ======================================================
 // PARAMETRES BRAS
 // ======================================================
@@ -19,8 +20,9 @@ const float zOffsetPivot1 = 75.0; //height offset in mm
 //prehension system parameters
 // Le point piloté est la pointe de l'outil.
 // Le poignet est donc décalé par rapport à cette pointe.
-const float toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
-const float toolHeight = -15.0;  // mm, outil 15 mm plus bas que le poignet
+float toolLength;   // mm, horizontal, toujours parallèle au sol
+float toolHeight;  // mm, outil 15 mm plus bas que le poignet
+float toolLateralOffset;
 //on travaille en cylindrique --> pas d'angle ici
 
 
@@ -53,7 +55,7 @@ void coordinatesChange(Coordinates* coordinates, float xPosition, float yPositio
  * 
  * returns : no returns (void).
  */
-void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
+void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet, Object* currentObject) {
     /*we will represent the system into a simplified version : 1 vertical pivot joint (point 0, system origin); 2 radial pivot 
     joints (point 1 and 2); 2 arms (from 1 to 2 and 2 to 3 respectively) and 1 offset from the vertical to the first 
     radial pivot. Point 3 is the Wrist end and 4 is the prehension system centre point. 
@@ -61,12 +63,15 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     coordinate system (2D projection of the 3D radius on the XY plane).
     */
 
-    //- radius between 0 and 4 on the (x;y) plane
-    float radiusZServoToPrehensionCenterXY = sqrt((coordinates->x*coordinates->x)+(coordinates->y*coordinates->y));
+    //- radius between 0 and Object on the (x;y) plane
+    float radiusZServoToObject = sqrt((coordinates->x*coordinates->x)+(coordinates->y*coordinates->y));
+
+    //- radius between s0 and projection of the Object center on the arm axis, on the (x;y) plane
+    float radiusZServoToObjectProjection = sqrt((radiusZServoToObject*radiusZServoToObject) - (toolLateralOffset*toolLateralOffset));
 
     ///- coordinates wrist end position (wrist-prehension system mechanical connection, 3)
-    //- radius between 0 and 3 projected on the (x;y) plane
-    float radiusZServoToWristEndXY = radiusZServoToPrehensionCenterXY-toolLength;
+    //- radius between 0 and 3 projected on the (x;y) plane - approximation --> cos(angle) = 1 when angle very small
+    float radiusZServoToWristEndXY = radiusZServoToObjectProjection-toolLength-currentObject->radius;
     //- radius between 0 and 3 in 3D
     float radiusZServoToWristEnd = sqrt((radiusZServoToWristEndXY)*(radiusZServoToWristEndXY)
                                         +((coordinates->z-toolHeight)*(coordinates->z-toolHeight))); 
@@ -100,7 +105,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     float radiusZservoToPivot2 = sqrt((zPivot2*zPivot2)
         +(radiusZServoToPivot2XY)*radiusZServoToPivot2XY);
     
-    //angles in rad 
+    //angles in rad
     //angle between the 2-3 arm and the ground (angle1-2+angle0-1) - theta1 
     float angleArm2ToHorizontalCorrected = atan2((zWristEnd-zPivot2),(radiusZServoToWristEndXY-radiusZServoToPivot2XY)); 
     //printf("theta1 : %f\n", angleArm2ToHorizontalCorrected);
@@ -108,7 +113,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
     float angleHorizontalToArm1Corrected = angleHorizontalToLine12; 
     //printf("theta2 : %f\n", angleHorizontalToArm1Corrected);
     //horizontal angle between 0 and 4 - theta3
-    float angleZServoPrehensionCenterCorrected = atan2(-coordinates->y,coordinates->x); 
+    float angleZServoPrehensionCenterCorrected = atan2(-coordinates->y,coordinates->x) + atan2(toolLateralOffset, radiusZServoToObjectProjection); 
     //printf("theta3 : %f\n", angleZServoPrehensionCenterCorrected);
 
     
@@ -131,31 +136,30 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet) {
  * Function : applyServoCommand
  * ------------
  * Change progessively the current positions of the servos to match their respective commands
- * 
+ *
  * servoSet : includes the 3 servos, of which the command angle values will be affected after computation
  * delayStepCloserToCommand : the delay between iterations of current position getting closer to command position, duration of a servo cycle step (ms)
- * 
+ *
  * returns : no returns (void).
  */
-void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage, 
+void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedProfileType speedProfileType, int depthPercentage,
     CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, float *anglePerformedDuringAcceleration,
-    int *elapsedTimeBeforeDeceleration, int *remainingCycleTime) {
+    int *remainingCycleTime) {
 
     
     //PC part - for debugging (delay() from computer)
     *anglePerformedDuringAcceleration=0;
-    *elapsedTimeBeforeDeceleration=0;
     //this variable will be used for non-constant profiles to decelerate - value to 0 here to allow it to be initialised
     *remainingCycleTime = -1;
     
     if (!servoSet->reachable) return;
 
     int done = 0; //target not reached yet
-    printf("\n\n\nservoLeft, servoRight, servoZ\n");
+    //printf("\n\n\nservoLeft, servoRight, servoZ\n");
 
-    while (!done) { 
+    while (!done) {
         speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand,
-                                anglePerformedDuringAcceleration, elapsedTimeBeforeDeceleration, remainingCycleTime);
+                                anglePerformedDuringAcceleration, remainingCycleTime);
         
         //elapsedTimeSinceServoCycleStart is to be replaced by a timer in the arduino code
 
@@ -173,9 +177,9 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         printf("%f \n", servoSet->servoZ.currentAngle);
     
         //done if angle difference between command and current position is smaller than 0.05 degrees
-        if(abs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
-        abs(servoSet->servoRight.currentAngle - servoSet->servoRight.angleCommand) < 0.05 &&
-        abs(servoSet->servoZ.currentAngle - servoSet->servoZ.angleCommand) < 0.05) {
+        if(fabs(servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleCommand) < 0.05 &&
+        fabs(servoSet->servoRight.currentAngle - servoSet->servoRight.angleCommand) < 0.05 &&
+        fabs(servoSet->servoZ.currentAngle - servoSet->servoZ.angleCommand) < 0.05) {
 
             done ++;
         }
@@ -186,11 +190,12 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         }
     }
     
+    
    
     /*
     //arduino part : to uncomment when flashing to the arduino mega
-
-    speedProfileApplication(servoSet, speedProfileType, 100, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand);
+    speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand,
+                                anglePerformedDuringAcceleration, remainingCycleTime);
 
     servoSet->servoLeft.currentAngle = limitStep(servoSet->servoLeft.currentAngle, servoSet->servoLeft.angleCommand, 
         servoSet->servoLeft.maxStep); //limits angle variation accordingly to the set servo parameter
@@ -198,7 +203,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         servoSet->servoRight.maxStep);
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-*/
+    */
     
 }
 
@@ -239,18 +244,19 @@ void delay(int number_of_seconds)
 }
 
 
+
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
     CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo, float *anglePerformedDuringAcceleration,
-    int *elapsedTimeBeforeDeceleration, int *remainingCycleTime) {
+    int *remainingCycleTime) {
 
     //those variables will be affected a value depending on the maximum angle to perform out of the 3 servos
-    float currentAngleToPerformServoLeft = abs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.angleCommand);//here, just the angle servoLeft has to perform to get to its destination
-    float currentAngleToPerformServoRight = abs(servoSet->servoRight.currentAngle-servoSet->servoRight.angleCommand);
-    float currentAngleToPerformServoZ= abs(servoSet->servoZ.currentAngle-servoSet->servoZ.angleCommand);
+    float currentAngleToPerformServoLeft = fabs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.angleCommand);//here, just the angle servoLeft has to perform to get to its destination
+    float currentAngleToPerformServoRight = fabs(servoSet->servoRight.currentAngle-servoSet->servoRight.angleCommand);
+    float currentAngleToPerformServoZ= fabs(servoSet->servoZ.currentAngle-servoSet->servoZ.angleCommand);
     //difference between destination and start angles
-    float totalAngleToPerformServoLeft = abs(servoSet->servoLeft.startAngle-servoSet->servoLeft.angleCommand);
-    float totalAngleToPerformServoRight = abs(servoSet->servoRight.startAngle-servoSet->servoRight.angleCommand);
-    float totalAngleToPerformServoZ= abs(servoSet->servoZ.startAngle-servoSet->servoZ.angleCommand);
+    float totalAngleToPerformServoLeft = fabs(servoSet->servoLeft.startAngle-servoSet->servoLeft.angleCommand);
+    float totalAngleToPerformServoRight = fabs(servoSet->servoRight.startAngle-servoSet->servoRight.angleCommand);
+    float totalAngleToPerformServoZ= fabs(servoSet->servoZ.startAngle-servoSet->servoZ.angleCommand);
 
 
     //steps ponderation depending on the biggest one (allows all angles destinations to be reached at the same time)
@@ -320,13 +326,13 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
             (currentAngleToPerformServoLeft<=totalAngleToPerformServoLeft/2)) {
             if(*anglePerformedDuringAcceleration==0) {
                 if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> can be used as reference
-                    *anglePerformedDuringAcceleration=servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle);
                 }
                 else if(servoSet->servoRight.maxStep != 0) { 
-                    *anglePerformedDuringAcceleration=servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle);
                 }
                 else { 
-                    *anglePerformedDuringAcceleration=servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle);
                 }
             }
         }
@@ -436,7 +442,6 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
         break;
     }
     case TRAPESOIDAL_EXPONENTIAL: {
-        int servoCycleDuration;
         float exponentialCoeff; //coefficient by which we'll multiply servos steps to get exponential accelerations/decelerations
 
 
@@ -445,13 +450,13 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
             (currentAngleToPerformServoLeft<=totalAngleToPerformServoLeft/2)) {
             if(*anglePerformedDuringAcceleration==0) {
                 if(servoSet->servoLeft.maxStep != 0) { //if servoLeft didn't reach its destination from the start, it means it moves during acceleration --> can be used as reference
-                    *anglePerformedDuringAcceleration=servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoLeft.currentAngle-servoSet->servoLeft.startAngle);
                 }
                 else if(servoSet->servoRight.maxStep != 0) { 
-                    *anglePerformedDuringAcceleration=servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoRight.currentAngle-servoSet->servoRight.startAngle);
                 }
                 else { 
-                    *anglePerformedDuringAcceleration=servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle;
+                    *anglePerformedDuringAcceleration=fabs(servoSet->servoZ.currentAngle-servoSet->servoZ.startAngle);
                 }
             }
         }
@@ -581,19 +586,20 @@ void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProf
  * Function : anglesToCoordinates
  * ------------
  * Takes the servo angles as input and computes the corresponding 3D coordinates
- * of the prehension system centre point (point 4).
+ * of the object centre point.
  *
  * servoSet : includes the 3 servos with their current angleCommand values
  * coordinates : output point with x, y and z coordinate values
+ * currentObject : object currently handled, used for its radius
  *
  * returns : no returns (void).
  */
-void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
+void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates, Object* currentObject) {
     /*
     We reverse the inverse kinematics chain:
     - Recover the three angles (theta1, theta2, theta3) from servo commands
     - Reconstruct pivot positions forward from the base (point 0)
-    - Derive the wrist end (point 3), then add back tool offsets to get point 4
+    - Derive the wrist end (point 3), then add back tool offsets to get the object centre
     */
 
     // --- Recover angles from servo commands (undo the offset and mapping) ---
@@ -601,7 +607,7 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
     float angleArm2ToHorizontal = (servoSet->servoLeft.currentAngle - servoSet->servoLeft.angleOffset - 180) * (M_PI / 180.0);
     // theta2 : angle between Arm1 (1-2) and horizontal
     float angleHorizontalToArm1 = (180 - servoSet->servoRight.currentAngle + servoSet->servoRight.angleOffset) * (M_PI / 180.0);
-    // theta3 : horizontal rotation angle around Z servo axis
+    // theta3 = phi1 + phi2 : horizontal rotation angle around Z servo axis
     float angleZServoPrehensionCenter = (servoSet->servoZ.currentAngle - servoSet->servoZ.angleOffset) * (M_PI / 180.0);
 
     // --- Forward chain: reconstruct pivot 1 position ---
@@ -616,16 +622,21 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
     float radiusZServoToWristEndXY = radiusZServoToPivot2XY + cos(angleArm2ToHorizontal) * lengthArm2;
     float zWristEnd = zPivot2 + sin(angleArm2ToHorizontal) * lengthArm2;
 
-    // --- Recover point 4 (prehension centre) from wrist end (point 3) ---
-    // Add back tool offsets (inverse of: zWristEnd = z - toolHeight, rXY = rXY_4 - toolLength)
-    float radiusZServoToPrehensionCenterXY = radiusZServoToWristEndXY + toolLength;
-    float zPrehensionCenter = zWristEnd + toolHeight;
+    // --- Recover projection of object centre on arm axis ---
+    // inverse of: radiusZServoToWristEndXY = radiusZServoToObjectProjection - toolLength - currentObject->radius
+    float radiusZServoToObjectProjection = radiusZServoToWristEndXY + toolLength + currentObject->radius;
+    // --- Recover radial distance from origin to object centre ---
+    // inverse of: radiusZServoToObjectProjection = sqrt(radiusZServoToObject² - toolLateralOffset²)
+    float radiusZServoToObject = sqrt((radiusZServoToObjectProjection*radiusZServoToObjectProjection)
+                                +(toolLateralOffset*toolLateralOffset));
 
-    // --- Project back to Cartesian coordinates using theta3 ---
-    // theta3 = atan2(-y, x)  =>  x = r*cos(theta3), y = -r*sin(theta3)
-    coordinates->x = radiusZServoToPrehensionCenterXY * cos(angleZServoPrehensionCenter);
-    coordinates->y = -radiusZServoToPrehensionCenterXY * sin(angleZServoPrehensionCenter);
-    coordinates->z = zPrehensionCenter;
+
+    // --- Project back to Cartesian coordinates ---
+    // inverse of: angleZServoPrehensionCenter = atan2(-y,x) + atan2(toolLateralOffset, radiusZServoToObjectProjection)
+    // => atan2(-y,x) = angleZServoPrehensionCenter - atan2(toolLateralOffset, radiusZServoToObjectProjection)
+    coordinates->x = radiusZServoToObject * cos(angleZServoPrehensionCenter - atan2(toolLateralOffset, radiusZServoToObjectProjection));
+    coordinates->y = -radiusZServoToObject * sin(angleZServoPrehensionCenter - atan2(toolLateralOffset, radiusZServoToObjectProjection));
+    coordinates->z = zWristEnd + toolHeight;
 }
 
 
@@ -640,14 +651,14 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates) {
  */
 void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand) {
     //offset obtainted by linear regression --> see spreadsheet results
-    servoSet->servoLeft.angleOffset=-8.0;
-    servoSet->servoRight.angleOffset=-7.0;
-    servoSet->servoZ.angleOffset=2.5;
+    servoSet->servoLeft.angleOffset=0;
+    servoSet->servoRight.angleOffset=0;
+    servoSet->servoZ.angleOffset=0;
 
     //servo time to 180° : 510 ms (0.51 seconds in 4.8V, see servo datasheet)
-    servoSet->servoLeft.servoMaxStep = (delayStepCloserToCommand*180 / 510); 
-    servoSet->servoRight.servoMaxStep = (delayStepCloserToCommand*180 / 510);
-    servoSet->servoZ.servoMaxStep = (delayStepCloserToCommand*180 / 510);
+    servoSet->servoLeft.servoMaxStep = ((float)delayStepCloserToCommand*180 / 510); //explicit conversion because delay is int
+    servoSet->servoRight.servoMaxStep = ((float)delayStepCloserToCommand*180 / 510);
+    servoSet->servoZ.servoMaxStep = (float)(delayStepCloserToCommand*180 / 510);
 }
 
 
@@ -663,6 +674,68 @@ void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand) {
 void affectInitialServoPosition(ServoSet* servoSet) {
     servoSet->servoLeft.startAngle=servoSet->servoLeft.currentAngle;
     servoSet->servoRight.startAngle=servoSet->servoRight.currentAngle;
-    servoSet->servoZ.startAngle=servoSet->servoRight.currentAngle;
+    servoSet->servoZ.startAngle=servoSet->servoZ.currentAngle;
 }
 
+
+/**
+ * Function : objectListInit
+ * ------------
+ * Initialise the values/parameters of the objects list
+ *
+ * returns : no returns (void), but object list values initialised
+ */
+
+void objectListInit() {
+    objectList.cyclindre.consigne=1.8; //in V
+    objectList.cyclindre.height=45;//in mm
+    objectList.cyclindre.objectName=CYLINDRE;
+    objectList.cyclindre.radius=15/2; //in mm
+
+    objectList.gobelet.consigne=1.8;
+    objectList.gobelet.height=0.0;
+    objectList.gobelet.objectName=GOBELET;
+    objectList.gobelet.radius=52/2;
+
+    objectList.gomme.consigne=1.8;
+    objectList.gomme.height=60;
+    objectList.gomme.objectName=GOMME;
+    objectList.gomme.radius=10/2;
+}
+
+
+/**
+ * Function : initRobotOffsets
+ * ------------
+ * Initialises length values depending on the current robot parameters
+ *
+ * robot : the current robot with its associated parameters
+ *
+ * returns : no returns (void), but length initialised
+ */
+void initRobotOffsets(Robot* robot) {
+    switch (robot->robotName) {
+    case ROBOT1:
+        toolLateralOffset = 8.0;
+        break;
+    case ROBOT2:
+        toolLateralOffset = 8.0;
+        break;
+    default:
+        break;
+    }
+
+
+    switch (robot->prehensionSystemType) {
+    case LASSO:
+        toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
+        toolHeight = -45.0;
+        break;
+    case EYE:
+        toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
+        toolHeight = -45.0;
+        break;
+    default:
+        break;
+    }
+}

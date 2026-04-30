@@ -20,28 +20,51 @@ Zone workingZone;
  * 
  * returns : no returns (void)
  */
+void initCoordinates(SelectedCycle* selectedCycle) {
 
-void initCoordinates() {
-    convoyeurEntree.x=-155.0;
-    convoyeurEntree.y=-19.0;
-    convoyeurEntree.z=5.0;
+    if(*selectedCycle==CYCLE1) {
+        convoyeurEntree.x=155.0;
+        convoyeurEntree.y=-20.0;
+        convoyeurEntree.z=50.0;
 
-    convoyeurSortie.x=155.0;
-    convoyeurSortie.y=-19.0;
-    convoyeurSortie.z=5.0;
+        convoyeurSortie.x=-155.0;
+        convoyeurSortie.y=-20.0;
+        convoyeurSortie.z=50.0;
 
-    machineA.x=-155.0;
-    machineA.y=-152.0;
-    machineA.z=5.0;
+        machineA.x=-150.0;
+        machineA.y=-150.0;
+        machineA.z=50.0;
 
-    machineB.x=165.0;
-    machineB.y=-117.0;
-    machineB.z=5.0;
+        machineB.x=-160.0;
+        machineB.y=-150.0;
+        machineB.z=0.0;
 
-    initPosition.x=0;
-    initPosition.y=-180;
-    initPosition.z=0.0;
+        initPosition.x=0.0;
+        initPosition.y=-130.0;
+        initPosition.z=120.0;
+    }
 
+    if(*selectedCycle==CYCLE2) {
+        convoyeurEntree.x=-155.0;
+        convoyeurEntree.y=-25.0;
+        convoyeurEntree.z=50.0;
+
+        convoyeurSortie.x=155.0;
+        convoyeurSortie.y=-20.0;
+        convoyeurSortie.z=50.0;
+
+        machineA.x=-150.0;
+        machineA.y=-150.0;
+        machineA.z=50.0;
+
+        machineB.x=155.0;
+        machineB.y=-97.0;
+        machineB.z=50.0;
+
+        initPosition.x=0.0;
+        initPosition.y=-130.0;
+        initPosition.z=120.0;
+    }
 }
 /**
  * Function : initZone
@@ -87,9 +110,9 @@ void initZone() {
  */
 int checkIfInZone(Coordinates coordinates, Zone zone) {
     //check for each axis if the point is in bounds
-    if((abs(coordinates.x) < abs(zone.origin.x)-5.0 || abs(coordinates.x)< abs(zone.farthestPointFromOrigin.x)-5.0) &&
-    (abs(coordinates.y) < abs(zone.origin.y)-5.0 || abs(coordinates.y)<abs(zone.farthestPointFromOrigin.y))-5.0 &&
-    (abs(coordinates.z) < abs(zone.origin.z)-5.0 || abs(coordinates.z)<abs(zone.farthestPointFromOrigin.z)-5.0)) {
+    if((fabs(coordinates.x) < fabs(zone.origin.x)-5.0 || fabs(coordinates.x)< fabs(zone.farthestPointFromOrigin.x)-5.0) &&
+    (fabs(coordinates.y) < fabs(zone.origin.y)-5.0 || fabs(coordinates.y)<fabs(zone.farthestPointFromOrigin.y))-5.0 &&
+    (fabs(coordinates.z) < fabs(zone.origin.z)-5.0 || fabs(coordinates.z)<fabs(zone.farthestPointFromOrigin.z)-5.0)) {
         return 1;
     }
     else {
@@ -115,27 +138,27 @@ ZoneDistances checkIfCloseToObstacle(Coordinates coordinates, Zone zone) {
 
 
     float difference = coordinates.x - zone.origin.x;
-    if(abs(difference) < abs(zoneDistance.distances.x)) {
+    if(fabs(difference) < fabs(zoneDistance.distances.x)) {
         zoneDistance.distances.x = difference;
     }
     difference = coordinates.x - zone.farthestPointFromOrigin.x;
-    if(abs(difference) < abs(zoneDistance.distances.x)) {
+    if(fabs(difference) < fabs(zoneDistance.distances.x)) {
         zoneDistance.distances.x = difference;
     }
     difference = coordinates.y - zone.origin.y;
-    if(abs(difference) < abs(zoneDistance.distances.y)) {
+    if(fabs(difference) < fabs(zoneDistance.distances.y)) {
         zoneDistance.distances.y = difference;
     }
     difference = coordinates.y - zone.farthestPointFromOrigin.y;
-    if(abs(difference) < abs(zoneDistance.distances.y)) {
+    if(fabs(difference) < fabs(zoneDistance.distances.y)) {
         zoneDistance.distances.y = difference;
     }
     difference = coordinates.z - zone.origin.z;
-    if(abs(difference) < abs(zoneDistance.distances.z)) {
+    if(fabs(difference) < fabs(zoneDistance.distances.z)) {
         zoneDistance.distances.z = difference;
     }
-    difference = abs(coordinates.z)<abs(zone.farthestPointFromOrigin.z);
-    if(abs(difference) < abs(zoneDistance.distances.z)) {
+    difference = fabs(coordinates.z)<fabs(zone.farthestPointFromOrigin.z);
+    if(fabs(difference) < fabs(zoneDistance.distances.z)) {
         zoneDistance.distances.z = difference;
     }
 
@@ -205,7 +228,7 @@ PrehensionStatus stepActions(CycleStep stepToken, Coordinates* coordinates) {
 
     case INIT:
         *coordinates=initPosition;
-        return RELEASE;
+        return GRAB;;
 
     case GRAB_OBJECT:
         return GRAB;
@@ -225,65 +248,105 @@ PrehensionStatus stepActions(CycleStep stepToken, Coordinates* coordinates) {
  * -- coordinates : pointer of the coordinates to change (destination coordinates)
  * -- actionPrehension : pointer of the action the prehension system will perform upon the step the cycle is at
  * -- nextStepIndex : pointer of the step to perform in the sequence
+ * -- selectedCycle : the cycle to perform
  * 
  * 
  * returns : nothing, changes the destination coordinates, defines the action to transmit to the prehension system and increments/reset to 0 the step sequence index (pointers)
  */
-void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actionPrehension, int* nextStepIndex) {
-    switch (*nextStepIndex) {
-    case 0: //step 0 : initialisation
-        *actionPrehension = stepActions(INIT, destinationCoordinates);
-        *nextStepIndex +=1; //for some reason it doesn't work with ++ (verified with debugger)
+void cycleExecution(Coordinates* destinationCoordinates, PrehensionStatus* actionPrehension,
+                    int* nextStepIndex, SelectedCycle* selectedCycle) {
+
+    switch (*selectedCycle) {
+    case CYCLE1:
+        switch (*nextStepIndex) {
+        case 0: //step 0 : initialisation
+            *actionPrehension = stepActions(INIT, destinationCoordinates);
+            *nextStepIndex +=1; //for some reason it doesn't work with ++ (verified with debugger)
+            break;
+        case 1: 
+            *actionPrehension = stepActions(CONVOYEUR_ENTREE, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 2:
+            *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 3: 
+            *actionPrehension = stepActions(MACHINE_A, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 4: 
+            *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        default:
+            //printf("error : this cycle step isn't defined.\n");
+            *actionPrehension = stepActions(INIT, destinationCoordinates);
+            *nextStepIndex =0;
+        }
         break;
-    case 1: 
-        *actionPrehension = stepActions(CONVOYEUR_ENTREE, destinationCoordinates);
-        *nextStepIndex +=1;
+
+    case CYCLE2:
+        switch (*nextStepIndex) {
+        case 0: //step 0 : initialisation
+            *actionPrehension = stepActions(INIT, destinationCoordinates);
+            *nextStepIndex +=1; //for some reason it doesn't work with ++ (verified with debugger)
+            break;
+        case 1: 
+            *actionPrehension = stepActions(CONVOYEUR_ENTREE, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 2:
+            *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 3: 
+            *actionPrehension = stepActions(MACHINE_A, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 4: 
+            *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 5:
+            *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 6: 
+            *actionPrehension = stepActions(MACHINE_B, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 7: 
+            *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 8: 
+            *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 9:
+            *actionPrehension = stepActions(CONVOYEUR_SORTIE, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 10: 
+            *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
+            *nextStepIndex +=1;
+            break;
+        case 11: //step 0 : initialisation
+            *actionPrehension = stepActions(INIT, destinationCoordinates);
+            *nextStepIndex =0; 
+            break;
+        default:
+            //printf("error : this cycle step isn't defined.\n");
+            *actionPrehension = stepActions(INIT, destinationCoordinates);
+            *nextStepIndex =0;
+        }
         break;
-    case 2:
-        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 3: 
-        *actionPrehension = stepActions(MACHINE_A, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 4: 
-        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 5:
-        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 6: 
-        *actionPrehension = stepActions(MACHINE_B, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 7: 
-        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 8: 
-        *actionPrehension = stepActions(GRAB_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 9:
-        *actionPrehension = stepActions(CONVOYEUR_SORTIE, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 10: 
-        *actionPrehension = stepActions(RELEASE_OBJECT, destinationCoordinates);
-        *nextStepIndex +=1;
-        break;
-    case 11: //step 0 : initialisation
-        *actionPrehension = stepActions(INIT, destinationCoordinates);
-        *nextStepIndex =0; 
-        break;
+
     default:
-        //printf("error : this cycle step isn't defined.\n");
-        *actionPrehension = stepActions(INIT, destinationCoordinates);
-        *nextStepIndex =0;
-    } 
+        break;
+    }
+    
 }
 
 
@@ -309,8 +372,8 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
     Coordinates intermediateDestination=currentCoordinates;//coordinates of a point withing the trajectory profile 
 
     //if current position is cycle step destination then the trajectory cycle is finished
-    if(abs(currentCoordinates.x-destination.x)<1.0 && abs(currentCoordinates.y-destination.y)<1.0 
-            && abs(currentCoordinates.z-destination.z)<1.0) {
+    if(fabs(currentCoordinates.x-destination.x)<1.0 && fabs(currentCoordinates.y-destination.y)<1.0 
+            && fabs(currentCoordinates.z-destination.z)<1.0) {
             *intermediatePoint=DESTINATION_POINT;
     }
 
@@ -344,7 +407,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             *intermediatePoint=INTERM_POINT_2;
             break;
         case ECO: // we cut the first trajectory triangle (see drawing 2 : trajectoryProfile.svg)
-            if(abs(trajMaxAltitude-currentCoordinates.z)>1.0) {
+            if(fabs(trajMaxAltitude-currentCoordinates.z)>1.0) {
                 intermediateDestination.x=currentCoordinates.x+(destination.x-currentCoordinates.x)*0.2;
                 intermediateDestination.y=currentCoordinates.y+(destination.y-currentCoordinates.y)*0.2;
                 intermediateDestination.z=trajMaxAltitude;
@@ -365,7 +428,7 @@ Coordinates trajectoryProfile(Coordinates currentCoordinates, Coordinates destin
             *intermediatePoint=DESTINATION_POINT;
             break;
         case ECO:
-            if(abs(trajMaxAltitude-currentCoordinates.z)<1.0) {
+            if(fabs(trajMaxAltitude-currentCoordinates.z)<1.0) {
                 intermediateDestination.x=destination.x;
                 intermediateDestination.y=destination.y;//we are above the destination point
                 intermediateDestination.z=trajMaxAltitude*0.8;

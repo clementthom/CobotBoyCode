@@ -41,13 +41,33 @@ typedef enum {
     PERFORMANCE
 }CycleMode;
 
-////Structures
+
+//Names of objects
+typedef enum {
+    GOMME,
+    GOBELET,
+    CYLINDRE
+}ObjectName;
+
+//robot currently in use
+typedef enum {
+    ROBOT1,
+    ROBOT2
+}RobotName;
+
+//selected prehension system
+typedef enum {
+    LASSO,
+    EYE
+}PrehensionSystemType;
+
+/////////////////////Structures
 
 //Tri-dimensional coordinates : x, y and z
 typedef struct {
-  float x;
-  float y;
-  float z;
+    float x;
+    float y;
+    float z;
 }Coordinates;
 
 //2 tri-dimensional points make a rectangular volume perpendicular to the cartesian coordinate system
@@ -62,5 +82,27 @@ typedef struct {
     Coordinates distances;
     ZoneType zoneType;
 }ZoneDistances;
+
+//parameters of object to grab
+typedef struct {
+    int radius;
+    int height;
+    ObjectName objectName;
+    double consigne;
+}Object;
+
+
+//lists of all objects
+typedef struct {
+    Object gomme;
+    Object gobelet;
+    Object cyclindre;
+}ObjectList;
+
+//Robots parameters
+typedef struct {
+    RobotName robotName;
+    PrehensionSystemType prehensionSystemType;
+}Robot;
 
 #endif
