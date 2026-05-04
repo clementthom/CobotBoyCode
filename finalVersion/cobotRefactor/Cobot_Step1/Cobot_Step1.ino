@@ -594,15 +594,15 @@ bool selectedPrehenseurUsesToolOffset() {
 
 void applyObjectGeometry(int objectIndex) {
   if (objectIndex == OBJ_GOBELET) {
-    objectRadius = 25;
-    prehensionHeight = 30;
+    objectRadius = 32;
+    prehensionHeight = 15;
     Serial.print("Rayon objet = ");
     Serial.print(objectRadius);
     Serial.print("Hauteur prehension = ");
     Serial.println(prehensionHeight);
   } else if (objectIndex == OBJ_GOMME) {
     objectRadius = 20;
-    prehensionHeight = 20;
+    prehensionHeight = 23;
     Serial.print("Rayon objet = ");
     Serial.print(objectRadius);
     Serial.print("Hauteur prehension = ");

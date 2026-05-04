@@ -19,6 +19,7 @@
 // =====================================================
 extern Adafruit_SSD1306 display;
 extern ScreenState screenState;
+extern unsigned long lastStatusUpdate;
 
 extern const char* homeMenu[];
 extern const char* initMenu[];

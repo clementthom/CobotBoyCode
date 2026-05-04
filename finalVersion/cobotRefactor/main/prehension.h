@@ -7,9 +7,9 @@
 // =====================================================
 // PID TUNING CONSTANTS
 // =====================================================
-#define KP_GRIP  90.0
-#define KI_GRIP   0.0
-#define KD_GRIP   2.5
+#define KP_GRIP 90.0
+#define KI_GRIP 0.0
+#define KD_GRIP 2.5
 
 // =====================================================
 // EXTERN GLOBALS — defined in prehension.cpp
@@ -26,6 +26,7 @@ extern double       gripperSetpoint;
 extern double       filteredTension;
 extern double       previousGripPWM;
 extern bool         gripperDone;
+extern AutoPID      pidGripper;
 extern bool         objectDetected;
 extern bool         openLimitDetected;
 

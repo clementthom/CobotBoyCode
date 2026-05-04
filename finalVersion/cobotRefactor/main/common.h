@@ -60,49 +60,58 @@ struct JointCmd {
 };
 
 // Dimension constants for offset and grip tables
-const int NB_CYCLES      = 2;
-const int NB_OBJECTS     = 3;
-const int NB_POSITIONS   = 4;
+const int NB_CYCLES = 2;
+const int NB_OBJECTS = 3;
+const int NB_POSITIONS = 4;
 const int NB_PREHENSEURS = 2;
 
 // Prehenseur index constants
-const int PREHENSEUR_OFFSET   = 0;
+const int PREHENSEUR_OFFSET = 0;
 const int PREHENSEUR_CENTERED = 1;
 
 // Object index constants
-const int OBJ_GOMME    = 0;
-const int OBJ_GOBELET  = 1;
+const int OBJ_GOMME = 0;
+const int OBJ_GOBELET = 1;
 const int OBJ_CYLINDRE = 2;
 
 // Position index constants
 const int POS_convoyeurEntree = 0;
-const int POS_machineA        = 1;
-const int POS_machineB        = 2;
+const int POS_machineA = 1;
+const int POS_machineB = 2;
 const int POS_convoyeurSortie = 3;
 
-struct PositionOffset { float dx; float dy; float dz; };
-struct GripSettings   { float openSetpoint; float closeSetpoint; };
+struct PositionOffset {
+  float dx;
+  float dy;
+  float dz;
+};
+struct GripSettings {
+  float openSetpoint;
+  float closeSetpoint;
+};
 
 // Screen states (used by userInterfaceScreen and main)
 enum ScreenState {
   SCREEN_HOME,
+  SCREEN_INIT_MENU,
   SCREEN_CONFIG,
-  SCREEN_CYCLE_SELECT,
-  SCREEN_PREHENSEUR_SELECT,
-  SCREEN_OBJECT_SELECT,
-  SCREEN_MODE_SELECT,
-  SCREEN_COMBINE_SELECT,
-  SCREEN_PIECES_SELECT,
   SCREEN_SETTINGS,
   SCREEN_INFO,
   SCREEN_STATUS,
-  SCREEN_INIT_MENU,
-  SCREEN_RUNNING,
+  SCREEN_CYCLE_MENU,
+  SCREEN_PREHENSEUR_MENU,
+  SCREEN_OBJECT_MENU,
+  SCREEN_MODE_MENU,
+  SCREEN_COMBINE_MENU,
   SCREEN_READY
 };
 
 // Gripper FSM states (used by prehension and maintenance)
-enum GripperState { GRIPPER_STOPPED, GRIPPER_OPENING, GRIPPER_CLOSING };
+enum GripperState {
+  GRIPPER_STOPPED,
+  GRIPPER_OPENING,
+  GRIPPER_CLOSING
+};
 
 // =====================================================
 // MAIN.INO — extern declarations for globals owned by main
@@ -132,6 +141,18 @@ extern int currentCombine;
 extern int currentPiece;
 
 extern unsigned long bootTime;
+
 extern const unsigned long bootIgnoreButtonsMs;
+extern const unsigned long statusRefreshDelay;
+// =====================================================
+// MAIN.INO — extern declarations for functions defined in main.ino
+// Called by .cpp modules; declared here so all modules see them.
+// =====================================================
+extern void systemYield();
+extern void smartWait(unsigned long ms);
+extern void performInitialization();
+extern void ihmInitializeAction();
+extern void ihmStartAction();
+extern void ihmPauseToggleAction();
 
 #endif // COMMON_H

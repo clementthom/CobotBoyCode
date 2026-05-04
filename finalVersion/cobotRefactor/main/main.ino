@@ -31,7 +31,6 @@ bool isInitializing = false;
 bool isRunning = false;
 bool isPaused = false;
 
-volatile bool pauseInterruptRequest = false;
 
 bool terminalModeActive = false;
 bool manualServoTestDirty = false;
@@ -52,6 +51,31 @@ int currentCombine = 0;
 int currentPiece = 0;
 
 unsigned long bootTime = 0;
+const unsigned long bootIgnoreButtonsMs = 1500;
+
+
+// =====================================================
+// FORWARD DECLARATIONS
+// (superseded by header includes in modular build;
+//  preserved verbatim from original for reference)
+// =====================================================
+void smartWait(unsigned long ms);
+void handleButtons();
+void moveToReposPosition();
+void moveRectangular(float xf, float yf, float zf, float liftHeight, unsigned long tUp, unsigned long tXY, unsigned long tDown);
+void performInitialization();
+void executeCurrentScreen();
+void handleApiSerial();
+void sendStatus();
+void sendConfig();
+void apiGotoCycle1EntreeTestHeight();
+void apiGripperAutoTest(String cmd);
+void ihmInitializeAction();
+void ihmStartAction();
+void ihmPauseToggleAction();
+void enterTerminalMode();
+void exitTerminalMode();
+void drawTerminalModeScreen();
 
 // =====================================================
 // [→ main.ino]  INITIALIZATION ACTION
@@ -242,48 +266,8 @@ void ihmPauseToggleAction() {
 
 // =====================================================
 // [→ main.ino]  SYSTEM YIELD & SMART WAIT
-// =====================================================
-void handlePauseInterrupt() {
-  if (!pauseInterruptRequest) return;
+// ====================================================
 
-  pauseInterruptRequest = false;
-
-  if (terminalButtonTestMode) {
-    sendButtonTestEvent("PAUSE");
-    return;
-  }
-
-  if (!isInitialized) return;
-
-  if (isRunning && !isPaused) {
-    pauseReturnX = currentX;
-    pauseReturnY = currentY;
-    pauseReturnZ = currentZ;
-
-    isPaused = true;
-    isRunning = false;
-    screenState = SCREEN_STATUS;
-    if (terminalModeActive) drawTerminalModeScreen();
-    else drawStatusScreen();
-
-    pauseMoveInProgress = true;
-    moveToReposPosition();
-    pauseMoveInProgress = false;
-
-    if (terminalModeActive) drawTerminalModeScreen();
-    else drawStatusScreen();
-  } else if (isPaused) {
-    isPaused = false;
-    isRunning = true;
-    screenState = SCREEN_STATUS;
-    if (terminalModeActive) drawTerminalModeScreen();
-    else drawStatusScreen();
-
-    pauseMoveInProgress = true;
-    moveRectangular(pauseReturnX, pauseReturnY, pauseReturnZ, 80, 500, 700, 500);
-    pauseMoveInProgress = false;
-  }
-}
 
 void systemYield() {
   if (tick10ms) {
