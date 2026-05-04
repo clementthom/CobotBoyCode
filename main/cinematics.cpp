@@ -148,7 +148,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
     CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, float *anglePerformedDuringAcceleration,
     int *remainingCycleTime) {
 
-    
+    /*
     //PC part - for debugging (delay() from computer)
     *anglePerformedDuringAcceleration=0;
     //this variable will be used for non-constant profiles to decelerate - value to 0 here to allow it to be initialised
@@ -191,11 +191,17 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
             *remainingCycleTime-=delayStepCloserToCommand;
         }
     }
-    
+    */
     
    
-    /*
+    
     //arduino part : to uncomment when flashing to the arduino mega
+
+    if (!servoSet->reachable) return;
+    *anglePerformedDuringAcceleration=0;
+    //this variable will be used for non-constant profiles to decelerate - value to 0 here to allow it to be initialised
+    *remainingCycleTime = -1;
+
     speedProfileApplication(servoSet, speedProfileType, depthPercentage, cycleMode, *elapsedTimeSinceServoCycleStart, delayStepCloserToCommand,
                                 anglePerformedDuringAcceleration, remainingCycleTime);
 
@@ -205,7 +211,14 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
         servoSet->servoRight.maxStep);
     servoSet->servoZ.currentAngle = limitStep(servoSet->servoZ.currentAngle, servoSet->servoZ.angleCommand, 
         servoSet->servoZ.maxStep);
-    */
+
+
+    *elapsedTimeSinceServoCycleStart +=delayStepCloserToCommand;
+    if(*remainingCycleTime!=-1) {//if remainingCycleTime initialised
+        *remainingCycleTime-=delayStepCloserToCommand;
+    }
+     
+    
     
 }
 
@@ -230,7 +243,7 @@ float limitStep(float currentValue, float targetValue, float maxStep) {
     return targetValue;
 }
 
-
+/*
 //timer only for debbuging --> native in ArduinoIDE
 void delay(int number_of_seconds)
 {
@@ -244,7 +257,7 @@ void delay(int number_of_seconds)
 	while (clock() < start_time + milli_seconds)
 		;
 }
-
+*/
 
 
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
@@ -691,17 +704,17 @@ void objectListInit() {
     objectList.cyclindre.consigne=1.4; //in V
     objectList.cyclindre.prehensionHeight=22;//in mm
     objectList.cyclindre.objectName=CYLINDRE;
-    objectList.cyclindre.radius=15/2; //in mm
+    objectList.cyclindre.radius=25.5/2; //in mm
 
     objectList.gobelet.consigne=1.15;
-    objectList.gobelet.prehensionHeight=0.0;
+    objectList.gobelet.prehensionHeight=15.0;
     objectList.gobelet.objectName=GOBELET;  
-    objectList.gobelet.radius=52/2;
+    objectList.gobelet.radius=47.3/2;
 
     objectList.gomme.consigne=1.3;
     objectList.gomme.prehensionHeight=20;
     objectList.gomme.objectName=GOMME;
-    objectList.gomme.radius=10/2;
+    objectList.gomme.radius=13/2;
 }
 
 

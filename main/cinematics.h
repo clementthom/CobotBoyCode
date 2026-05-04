@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+
+//Extern declaration
+extern ObjectList objectList;
+
 //Enumerations
 
 //How the speed profile behaves between 2 points
@@ -39,7 +43,7 @@ void applyServoCommand(ServoSet *servoSet, int delayStepCloserToCommand , SpeedP
     CycleMode cycleMode, int *elapsedTimeSinceServoCycleStart, float *anglePerformedDuringAcceleration,
     int *remainingCycleTime);
 float limitStep(float currentValue, float targetValue, float maxStep);
-void delay(int milli_seconds); //only for debbuging
+//void delay(int milli_seconds); //only for debbuging
 void speedProfileApplication(ServoSet* servoSet, enum SpeedProfileType speedProfileType, int depthPercentage, 
     CycleMode cycleMode, int elapsedTimeSinceServoCycleStart, int delayCommandServo, float *anglePerformedDuringAcceleration,
      int *remainingCycleTime);
