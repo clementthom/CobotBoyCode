@@ -22,8 +22,8 @@ int main() {
     //testLimitStep();
     //testAnglesAndCoordinates();
     //testSpeedProfileLinear(); 
-    //testSpeedProfileTrapesoidalLinear();
-    testSpeedProfileTrapesoidalExp();
+    testSpeedProfileTrapesoidalLinear();
+    //testSpeedProfileTrapesoidalExp();
     printf("fin");
 }
 
@@ -47,8 +47,14 @@ void testAngles() {
     coordinates.y=-150.0;
     coordinates.z=10.0;
 
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
 
-    coordinatesToAngles(&coordinates, &servoSet);
+
+    coordinatesToAngles(&coordinates, &servoSet, &object);
 
     printf("positions : \n x : %f   \ny : %f    \nz : %f \n \n", coordinates.x, coordinates.y, coordinates.z);
     printf("angleLeft : %f\nangleRight : %f \nangleZ : %f \n",
@@ -76,7 +82,14 @@ void testApplyServoCommand() {
     servoSet.servoRight.maxStep = 1.2;
     servoSet.servoZ.maxStep = 1.5;
 
-    coordinatesToAngles(&coordinates, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&coordinates, &servoSet, &object);
     printf("theta 1 : %f \n theta 2 : %f \n theta 3 : %f \n",
         servoSet.servoLeft.angleCommand, servoSet.servoRight.angleCommand, servoSet.servoZ.angleCommand);
     printf("reacheable : %d \n", servoSet.reachable);
@@ -112,7 +125,14 @@ void testLimitStep() {
     servoSet.servoRight.maxStep = 1.2;
     servoSet.servoZ.maxStep = 1.5;
 
-    coordinatesToAngles(&coordinates, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&coordinates, &servoSet, &object);
     printf("theta 1 : %f \n theta 2 : %f \n theta 3 : %f \n",
         servoSet.servoLeft.angleCommand, servoSet.servoRight.angleCommand, servoSet.servoZ.angleCommand);
     printf("reacheable : %d \n", servoSet.reachable);
@@ -142,12 +162,19 @@ void testAnglesAndCoordinates() {
     servoSet.servoRight.maxStep = 1.2;
     servoSet.servoZ.maxStep = -2.0;
 
-    coordinatesToAngles(&input, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&input, &servoSet, &object);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
     servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
     servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
 
-    anglesToCoordinates(&servoSet, &output);
+    anglesToCoordinates(&servoSet, &output, &object);
     printf("\n\ninput x : %f\ninput y : %f\ninput z : %f", input.x, input.y, input.z);
     printf("\n\noutput x : %f\noutput y : %f\noutput z : %f", output.x, output.y, output.z);
 
@@ -181,17 +208,24 @@ void testSpeedProfileLinear() {
     destination.z=100.0;
 
 
-    coordinatesToAngles(&currentPosition, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&currentPosition, &servoSet, &object);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
     servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
     servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
 
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&intermediatePosition, &servoSet);
+    coordinatesToAngles(&intermediatePosition, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
     
     if(abs(currentPosition.x-intermediatePosition.x)<1 && 
         abs(currentPosition.y-intermediatePosition.y)<1 &&
@@ -201,10 +235,10 @@ void testSpeedProfileLinear() {
     }
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&destination, &servoSet);
+    coordinatesToAngles(&destination, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, CONSTANT, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
 
 
     if(abs(currentPosition.x==intermediatePosition.x)<1 && 
@@ -243,17 +277,24 @@ void testSpeedProfileTrapesoidalLinear() {
     destination.z=100.0;
 
 
-    coordinatesToAngles(&currentPosition, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&currentPosition, &servoSet, &object);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
     servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
     servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
 
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&intermediatePosition, &servoSet);
+    coordinatesToAngles(&intermediatePosition, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, TRAPESOIDAL_LINEAR, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
     
     if(abs(currentPosition.x-intermediatePosition.x)<1 && 
         abs(currentPosition.y-intermediatePosition.y)<1 &&
@@ -269,10 +310,10 @@ void testSpeedProfileTrapesoidalLinear() {
 
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&destination, &servoSet);
+    coordinatesToAngles(&destination, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, TRAPESOIDAL_LINEAR, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
 
 
     if(abs(currentPosition.x==intermediatePosition.x)<1 && 
@@ -317,17 +358,24 @@ void testSpeedProfileTrapesoidalExp() {
     destination.z=100.0;
 
 
-    coordinatesToAngles(&currentPosition, &servoSet);
+    Object object;
+    object.consigne=0.0;
+    object.height=0.0;
+    object.objectName=GOMME;
+    object.radius=0.0;
+
+
+    coordinatesToAngles(&currentPosition, &servoSet, &object);
     servoSet.servoLeft.currentAngle=servoSet.servoLeft.angleCommand;
     servoSet.servoRight.currentAngle=servoSet.servoRight.angleCommand;
     servoSet.servoZ.currentAngle=servoSet.servoZ.angleCommand;
 
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&intermediatePosition, &servoSet);
+    coordinatesToAngles(&intermediatePosition, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, TRAPESOIDAL_EXPONENTIAL, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
     
     if(abs(currentPosition.x-intermediatePosition.x)<1 && 
         abs(currentPosition.y-intermediatePosition.y)<1 &&
@@ -337,16 +385,15 @@ void testSpeedProfileTrapesoidalExp() {
     }
 
     elapsedTime=0;
-    elapsedTimeBeforeDeceleration = 0; 
+    elapsedTimeBeforeDeceleration = 0;
     remainingCycleTime=0;
-    anglePerformedDuringAcceleration = 0;
 
 
     affectInitialServoPosition(&servoSet);
-    coordinatesToAngles(&destination, &servoSet);
+    coordinatesToAngles(&destination, &servoSet, &object);
     applyServoCommand(&servoSet, delayCommandAngle, TRAPESOIDAL_EXPONENTIAL, 100, PERFORMANCE, &elapsedTime, 
-                        &anglePerformedDuringAcceleration, &elapsedTimeBeforeDeceleration, &remainingCycleTime);
-    anglesToCoordinates(&servoSet, &currentPosition);
+                        &anglePerformedDuringAcceleration, &remainingCycleTime);
+    anglesToCoordinates(&servoSet, &currentPosition, &object);
 
 
     if(abs(currentPosition.x==intermediatePosition.x)<1 && 

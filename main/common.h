@@ -86,7 +86,7 @@ typedef struct {
 //parameters of object to grab
 typedef struct {
     int radius;
-    int height;
+    int prehensionHeight;
     ObjectName objectName;
     double consigne;
 }Object;

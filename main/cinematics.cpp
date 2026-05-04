@@ -17,6 +17,8 @@ const float rOffsetPivot1XY = 20.0; //radial offset on the XY plane in degrees
 const float zOffsetPivot1 = 75.0; //height offset in mm
 
 
+
+
 //prehension system parameters
 // Le point piloté est la pointe de l'outil.
 // Le poignet est donc décalé par rapport à cette pointe.
@@ -71,7 +73,7 @@ void coordinatesToAngles(Coordinates* coordinates, ServoSet* servoSet, Object* c
 
     ///- coordinates wrist end position (wrist-prehension system mechanical connection, 3)
     //- radius between 0 and 3 projected on the (x;y) plane - approximation --> cos(angle) = 1 when angle very small
-    float radiusZServoToWristEndXY = radiusZServoToObjectProjection-toolLength-currentObject->radius;
+    float radiusZServoToWristEndXY = radiusZServoToObjectProjection-toolLength+currentObject->radius;
     //- radius between 0 and 3 in 3D
     float radiusZServoToWristEnd = sqrt((radiusZServoToWristEndXY)*(radiusZServoToWristEndXY)
                                         +((coordinates->z-toolHeight)*(coordinates->z-toolHeight))); 
@@ -651,8 +653,8 @@ void anglesToCoordinates(ServoSet* servoSet, Coordinates* coordinates, Object* c
  */
 void initServoSet(ServoSet* servoSet, int delayStepCloserToCommand) {
     //offset obtainted by linear regression --> see spreadsheet results
-    servoSet->servoLeft.angleOffset=0;
-    servoSet->servoRight.angleOffset=0;
+    servoSet->servoLeft.angleOffset=-20.0;
+    servoSet->servoRight.angleOffset=-10.0;
     servoSet->servoZ.angleOffset=0;
 
     //servo time to 180° : 510 ms (0.51 seconds in 4.8V, see servo datasheet)
@@ -685,20 +687,19 @@ void affectInitialServoPosition(ServoSet* servoSet) {
  *
  * returns : no returns (void), but object list values initialised
  */
-
 void objectListInit() {
-    objectList.cyclindre.consigne=1.8; //in V
-    objectList.cyclindre.height=45;//in mm
+    objectList.cyclindre.consigne=1.4; //in V
+    objectList.cyclindre.prehensionHeight=22;//in mm
     objectList.cyclindre.objectName=CYLINDRE;
     objectList.cyclindre.radius=15/2; //in mm
 
-    objectList.gobelet.consigne=1.8;
-    objectList.gobelet.height=0.0;
-    objectList.gobelet.objectName=GOBELET;
+    objectList.gobelet.consigne=1.15;
+    objectList.gobelet.prehensionHeight=0.0;
+    objectList.gobelet.objectName=GOBELET;  
     objectList.gobelet.radius=52/2;
 
-    objectList.gomme.consigne=1.8;
-    objectList.gomme.height=60;
+    objectList.gomme.consigne=1.3;
+    objectList.gomme.prehensionHeight=20;
     objectList.gomme.objectName=GOMME;
     objectList.gomme.radius=10/2;
 }
@@ -728,7 +729,7 @@ void initRobotOffsets(Robot* robot) {
 
     switch (robot->prehensionSystemType) {
     case LASSO:
-        toolLength = 57.0;   // mm, horizontal, toujours parallèle au sol
+        toolLength = 65-40;   // mm, horizontal, toujours parallèle au sol, = distance centre préhenseur-pivot3 (sur r,z cylindrique)
         toolHeight = -45.0;
         break;
     case EYE:

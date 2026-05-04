@@ -37,11 +37,11 @@ void initCoordinates(SelectedCycle* selectedCycle) {
 
         machineB.x=-160.0;
         machineB.y=-150.0;
-        machineB.z=0.0;
+        machineB.z=50.0;
 
         initPosition.x=0.0;
         initPosition.y=-130.0;
-        initPosition.z=120.0;
+        initPosition.z=50.0;
     }
 
     if(*selectedCycle==CYCLE2) {
@@ -63,7 +63,7 @@ void initCoordinates(SelectedCycle* selectedCycle) {
 
         initPosition.x=0.0;
         initPosition.y=-130.0;
-        initPosition.z=120.0;
+        initPosition.z=50.0;
     }
 }
 /**
